@@ -11,7 +11,8 @@ from sentence_transformers.losses import TripletLoss
 from training_data import TrainingData
 
 
-def train_triplet(training_data: TrainingData, export_path: str, model_name: str = "all-MiniLM-L6-v2", output_path: str = None,
+def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, model_name: str = "all-MiniLM-L6-v2",
+                  output_path: str = None,
                   **kwargs):
     if output_path is None:
         output_path = export_path
@@ -36,7 +37,7 @@ def train_triplet(training_data: TrainingData, export_path: str, model_name: str
     run_name = f"{model_name}-tracing"
     args = SentenceTransformerTrainingArguments(
         output_dir=output_path,
-        num_train_epochs=50,
+        num_train_epochs=n_epochs,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         warmup_ratio=0.1,
