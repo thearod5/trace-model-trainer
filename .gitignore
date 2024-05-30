@@ -1,3 +1,5 @@
 venv
 .idea
+export
+__pycache__
 **/.DS_Store

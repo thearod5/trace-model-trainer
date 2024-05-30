@@ -1,0 +1,19 @@
+source,target
+Alarm Thread,Safety Subsystem
+Failure LED,Safety Subsystem
+Error Detector,Safety Subsystem
+Fault Logger,Safety Subsystem
+Pump Fault Manager,Safety Subsystem
+Patient Button,Fluid Subsystem
+Downstream Monitor,Fluid Subsystem
+Drug Reservoir,Fluid Subsystem
+Upstream Monitor,Fluid Subsystem
+Pump,Fluid Subsystem
+Scanner,Operation Subsystem
+Event Logger Thread,Operation Subsystem
+Drug Library Thread,Operation Subsystem
+Operation Thread,Operation Subsystem
+Operation Process,Operation Subsystem
+Control Panel,Operation Subsystem
+Power Control,Power Subsystem
+Battery,Power Subsystem

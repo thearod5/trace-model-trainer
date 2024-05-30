@@ -1,0 +1,5 @@
+id,content
+Power Subsystem,"The power subsystem consists of a battery, power control, and an implicit power supply."
+Safety Subsystem,"The safety subsystem detects faults that may harm the patient, signals an alarm or warning, and stop infusion or reduces infusion to a keep vein open rate depending on the fault(s) detected."
+Fluid Subsystem,The fluid subsystem moves drug from the reservoir to the line to the patient.
+Operation Subsystem,"The operation subsystem controls infusion, performs security operations, and operates the user interface."

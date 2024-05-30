@@ -1,0 +1,21 @@
+{
+	"artifacts": [
+		
+		 {
+			"type": "Component",
+			"fileName": "component.csv"
+		},
+		{
+			"type": "Sub-System",
+			"fileName": "subsystem.csv"
+		}
+	
+	],
+	"traces": [
+		{
+			"fileName": "component2subsystem.csv",
+			"sourceType": "Component",
+			"targetType": "Sub-System"
+		}
+	]
+}
