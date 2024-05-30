@@ -62,7 +62,7 @@ def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, 
         anchors=val_df["anchor"].tolist(),
         positives=val_df["positive"].tolist(),
         negatives=val_df["negative"].tolist(),
-        show_progress_bar=True
+        show_progress_bar=False
     )
 
     # Create the trainer and train the model
