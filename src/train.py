@@ -17,6 +17,8 @@ def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, 
     if output_path is None:
         output_path = export_path
 
+    os.makedirs(export_path, exist_ok=True)
+
     train_df = training_data.train_df
     val_df = training_data.val_df
 
