@@ -31,17 +31,17 @@ def train_triplet(training_data: TrainingData, export_path: str, model_name: str
     # Specify training arguments
     run_name = f"{model_name}-tracing"
     args = SentenceTransformerTrainingArguments(
-        output_dir="models/mpnet-base-custom-triplet",
+        output_dir=export_path,
         num_train_epochs=50,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         warmup_ratio=0.1,
         fp16=torch.cuda.is_available(),
         bf16=False,
-        eval_strategy="steps",
-        eval_steps=100,
-        save_strategy="steps",
-        save_steps=100,
+        eval_strategy="epoch",
+        eval_steps=1,
+        save_strategy="epoch",
+        save_steps=1,
         save_total_limit=2,
         logging_steps=100,
         run_name=run_name,
@@ -52,10 +52,11 @@ def train_triplet(training_data: TrainingData, export_path: str, model_name: str
 
     # Create the evaluators
     dev_evaluator = TripletEvaluator(
-        anchors=val_df["anchor"],
-        positives=val_df["positive"],
-        negatives=val_df["negative"],
-        name="custom-triplet-dev"
+        name="custom-triplet-dev",
+        anchors=val_df["anchor"].tolist(),
+        positives=val_df["positive"].tolist(),
+        negatives=val_df["negative"].tolist(),
+        show_progress_bar=True
     )
 
     # Create the trainer and train the model
