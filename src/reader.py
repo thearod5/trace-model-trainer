@@ -75,9 +75,10 @@ def create_trace_df(project_path: str, files: Iterable[str]):
     for f in files:
         file_path = os.path.join(project_path, f)
         f_df = read_file(file_path, k="traces")
-        if ".json" in files:
+        if ".json" in f:
             f_df = f_df[f_df['traceType'] == "MANUAL"]
             f_df = f_df.rename({"sourceName": "source", "targetName": "target"}, axis=1)
+            f_df = f_df.drop("traceType", axis=1)
         f_df['label'] = 1
         dfs.append(f_df)
 

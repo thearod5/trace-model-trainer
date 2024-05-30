@@ -6,7 +6,7 @@ from train import train_triplet
 from training_data import create_training_data
 
 if __name__ == "__main__":
-    project_path = "../res/mip"
+    project_path = "../res/safa"
 
     project_data = read_project(project_path)
     training_data = create_training_data(project_data)
