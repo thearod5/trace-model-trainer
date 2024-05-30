@@ -32,7 +32,7 @@ def train_triplet(training_data: TrainingData, export_path: str, model_name: str
     run_name = f"{model_name}-tracing"
     args = SentenceTransformerTrainingArguments(
         output_dir="models/mpnet-base-custom-triplet",
-        num_train_epochs=5,
+        num_train_epochs=50,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         warmup_ratio=0.1,
@@ -44,7 +44,10 @@ def train_triplet(training_data: TrainingData, export_path: str, model_name: str
         save_steps=100,
         save_total_limit=2,
         logging_steps=100,
-        run_name=run_name
+        run_name=run_name,
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False
     )
 
     # Create the evaluators
@@ -71,7 +74,11 @@ def train_triplet(training_data: TrainingData, export_path: str, model_name: str
     # Train the model
     trainer.train()
 
-    # Save the trained model
+    # Save the best trained model
     os.makedirs(dirname(export_path), exist_ok=True)
-    model.save_pretrained(export_path)
+    trainer.model.save_pretrained(export_path)
     print("Saved model to:", export_path)
+
+    return trainer.model
+
+# Note: Ensure that the 'training_data' module provides 'train_df' and 'val_df' dataframes with the columns "anchor", "positive", and "negative".

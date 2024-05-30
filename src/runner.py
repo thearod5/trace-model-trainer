@@ -21,3 +21,6 @@ if __name__ == "__main__":
 
     # Train
     train_triplet(training_data, "../export/test-model.pth")
+
+    # Evaluate after training
+    eval_model(model, training_data.test_dataset, training_data.test_dataset, title="Test Metrics")
