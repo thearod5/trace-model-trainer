@@ -83,9 +83,10 @@ def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, 
     trainer.train()
 
     # Save the best trained model
-    os.makedirs(dirname(export_path), exist_ok=True)
-    trainer.model.save_pretrained(export_path)
-    print("Saved model to:", export_path)
+    if export_path:
+        os.makedirs(dirname(export_path), exist_ok=True)
+        trainer.model.save_pretrained(export_path)
+        print("Saved model to:", export_path)
 
     return trainer.model
 
