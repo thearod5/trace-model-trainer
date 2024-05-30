@@ -29,5 +29,5 @@ def eval_model(model, dataset: TraceDataset, df, title=None):
     }
     if title:
         print(title)
-    print(metrics)
+        print(metrics)
     return metrics
