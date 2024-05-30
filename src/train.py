@@ -11,7 +11,8 @@ from sentence_transformers.losses import TripletLoss
 from training_data import TrainingData
 
 
-def train_triplet(training_data: TrainingData, export_path: str, model_name: str = "all-MiniLM-L6-v2", output_path: str = None):
+def train_triplet(training_data: TrainingData, export_path: str, model_name: str = "all-MiniLM-L6-v2", output_path: str = None,
+                  **kwargs):
     if output_path is None:
         output_path = export_path
 
@@ -50,7 +51,8 @@ def train_triplet(training_data: TrainingData, export_path: str, model_name: str
         run_name=run_name,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
-        greater_is_better=False
+        greater_is_better=False,
+        **kwargs
     )
 
     # Create the evaluators
