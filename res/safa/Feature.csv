@@ -1,0 +1,17 @@
+id,content,layer_id,summary,chunks
+Bulk Project Creation,Quickly create a project from a set of CSV of JSON files and a TIM outline of what files correspond to what data.,Feature,,
+Projects,Edit project information and delete projects.,Feature,,
+Artifact Tree Nodes,Interact with artifacts and trace links in the artifact tree.,Feature,,
+Standard Project Creation,"Create a project by importing artifacts and trace links one file at a time, and view a TIM summary of the project being created.",Feature,,
+Project List,"Load existing projects to view, as well as leave, delete, and edit projects.",Feature,,
+Artifact Display,Display the content and relationships of an artifact.,Feature,,
+Artifact Management,"Manage the creation, retrieval, updating, and deletion of artifacts.",Feature,,
+Artifact Generation Display,"Displays a side panel for generating parent artifacts, given an artifact type to generate and the artifacts to generate from.
+
+I can open generation from the project view by:
+
+- Clicking the `+` followed by `Generate Artifacts`.
+- Right clicking followed by `Generate Artifacts`.
+- Holding shift and drag clicking to select artifacts, then right clicking followed by `Generate Artifacts` to use the selected artifacts for generation.",Feature,,
+Project Versions,"Create new versions, upload files to existing ones, and delete versions no longer being used.",Feature,,
+Artifact Table,"View, sort, group, and filter artifacts in a table.",Feature,,
