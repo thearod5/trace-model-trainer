@@ -11,9 +11,8 @@ from sentence_transformers.losses import TripletLoss
 from training_data import TrainingData
 
 
-def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, model_name: str = "all-MiniLM-L6-v2",
-                  output_path: str = None,
-                  **kwargs):
+def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, output_path: str = None,
+                  model_name: str = "all-MiniLM-L6-v2", **kwargs):
     if output_path is None:
         output_path = export_path
 
