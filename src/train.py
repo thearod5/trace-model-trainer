@@ -36,6 +36,7 @@ def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, 
 
     # Specify training arguments
     run_name = f"{model_name}-tracing"
+    print("Output Dir:", output_path)
     args = SentenceTransformerTrainingArguments(
         output_dir=output_path,
         num_train_epochs=n_epochs,
@@ -48,7 +49,7 @@ def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, 
         eval_steps=1,
         save_strategy="epoch",
         save_steps=1,
-        save_total_limit=2,
+        save_total_limit=1,
         logging_steps=100,
         run_name=run_name,
         load_best_model_at_end=True,
