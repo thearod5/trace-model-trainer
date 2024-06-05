@@ -4,7 +4,7 @@ from sentence_transformers import SentenceTransformer
 
 from eval import eval_model
 from reader import read_project
-from train import train_triplet
+from train_triplet import train_triplet
 from training_data import create_training_data
 
 if __name__ == "__main__":
