@@ -7,13 +7,17 @@ def read_json(f):
         return json.load(file_pointer)
 
 
-def t_id_creator(trace_row):
+def t_id_creator(trace_row=None, source=None, target=None):
     """
     Creates trace id for row in trace file.
     :param trace_row: Row in trace data frame.
     :return: Trace ID.
     """
-    return f"{trace_row['source']}*{trace_row['target']}"
+    if trace_row is not None:
+        source = trace_row['source']
+        target = trace_row['target']
+
+    return f"{source}*{target}"
 
 
 def has_param(f, param):

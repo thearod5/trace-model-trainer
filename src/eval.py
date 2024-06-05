@@ -1,20 +1,21 @@
-import torch
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 
 from predict import predict_scores
+from tdata.trace_dataset import TraceDataset
 from torch_utils import get_device
-from trace_dataset import TraceDataset
 
 
-def eval_model(model, dataset: TraceDataset, df, title=None):
+def eval_model(model, dataset: TraceDataset, title=None):
     device = get_device()
     model.eval()
     model = model.to(device)
-    labels = [l for _, _, l in dataset]
-    with torch.no_grad():
-        scores = predict_scores(model, dataset.get_prediction_payload())
+    trace_predictions = predict_scores(model, dataset)
 
-    predictions = [1 if score >= 0.5 else 0 for score in scores]
+    predictions = []
+    labels = []
+    for t in trace_predictions:
+        predictions.append(1 if t.score >= 0.5 else 0)
+        labels.append(t.label)
 
     tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
 

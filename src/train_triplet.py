@@ -1,6 +1,8 @@
 import os
+from collections import defaultdict
 from os.path import dirname
 
+import pandas as pd
 import torch
 from datasets import Dataset
 from sentence_transformers import SentenceTransformer, SentenceTransformerModelCardData, SentenceTransformerTrainer, \
@@ -8,18 +10,20 @@ from sentence_transformers import SentenceTransformer, SentenceTransformerModelC
 from sentence_transformers.evaluation import TripletEvaluator
 from sentence_transformers.losses import TripletLoss
 
-from training_data import TrainingData
+from tdata.trace_dataset import TraceDataset
+from utils import t_id_creator
 
 
-def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, output_path: str = None,
+def train_triplet(dataset: TraceDataset, n_epochs: int, export_path: str, output_path: str = None,
                   model_name: str = "all-MiniLM-L6-v2", **kwargs):
     if output_path is None:
         output_path = export_path
 
     os.makedirs(export_path, exist_ok=True)
 
-    train_df = training_data.train_df
-    val_df = training_data.val_df
+    train_trace_dataset, val_trace_dataset = dataset.split(0.1)
+    train_df = create_triplet_df(train_trace_dataset)
+    val_df = create_triplet_df(val_trace_dataset)
 
     # Load the model
     model = SentenceTransformer(
@@ -91,4 +95,38 @@ def train_triplet(training_data: TrainingData, n_epochs: int, export_path: str, 
 
     return trainer.model
 
-# Note: Ensure that the 'training_data' module provides 'train_df' and 'val_df' dataframes with the columns "anchor", "positive", and "negative".
+
+def create_triplet_df(dataset: TraceDataset):
+    trace_df = dataset.trace_df
+    artifact_map = dataset.artifact_map
+
+    triplet_lookup = create_triplet_lookup(dataset)
+
+    # Create triplets
+    triplets = []
+
+    for source_id, lookup in triplet_lookup.items():
+        positive_links = pd.Series(lookup['pos'])
+        negative_links = pd.Series(lookup['neg']).sample(frac=1)
+        for positive_id, negative_id in zip(positive_links, negative_links):
+            triplets.append((source_id, positive_id, negative_id))
+
+    triplets = [(artifact_map[a], artifact_map[b], artifact_map[c]) for a, b, c in triplets]
+    triplet_df = pd.DataFrame(triplets, columns=['anchor', 'positive', 'negative'])
+    return triplet_df
+
+
+def create_triplet_lookup(dataset: TraceDataset):
+    lookup = defaultdict(lambda: {"pos": [], 'neg': []})
+    for source_artifact_ids, target_artifact_ids in dataset.get_layer_iterator():
+        for s_id in source_artifact_ids:
+            for t_id in target_artifact_ids:
+
+                trace_id = t_id_creator(source=s_id, target=t_id)
+
+                if trace_id not in dataset.trace_map:
+                    lookup[s_id]['neg'].append(t_id)
+                else:
+                    lookup[s_id]['pos'].append(t_id)
+
+    return lookup

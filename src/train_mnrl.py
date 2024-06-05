@@ -1,44 +1,32 @@
 import torch
-from pandas import DataFrame
+from datasets import Dataset
 from sentence_transformers import SentenceTransformer, SentenceTransformerModelCardData, SentenceTransformerTrainer, \
     SentenceTransformerTrainingArguments, losses
-from torch import Dataset
+
+from tdata.trace_dataset import TraceDataset
 
 
-class MNRLDataset(Dataset):
-    def __init__(self, grouped_pairs):
-        self.grouped_pairs = grouped_pairs
+def to_mnrl_dataset(dataset: TraceDataset):
+    anchors = []
+    positives = []
+    for i, row in dataset.trace_df.iterrows():
+        s_id = row['source']
+        t_id = row['target']
+        anchors.append(dataset.artifact_map[t_id])
+        positives.append(dataset.artifact_map[s_id])
 
-    def __len__(self):
-        return len(self.grouped_pairs)
-
-    def __getitem__(self, idx):
-        anchor, positives = self.grouped_pairs[idx][0][0], [p[1] for p in self.grouped_pairs[idx]]
-        return {"anchor": anchor, "positive": positives}
+    return Dataset.from_dict({
+        "anchor": anchors,
+        "positive": positives
+    })
 
 
-def train_mnrl(artifact_df: DataFrame, trace_df: DataFrame, output_path: str, n_epochs: int, model_name: str = "all-MiniLM-L6-v2",
-               **kwargs):
+def train_mnrl(dataset: TraceDataset, n_epochs: int, model_name: str = "all-MiniLM-L6-v2",
+               output_path: str = None, **kwargs):
     # Merge to create pairs
-    pairs = trace_df.merge(artifact_df, left_on='source', right_on='id') \
-        .merge(artifact_df, left_on='target', right_on='id', suffixes=('_source', '_target'))
-
-    # Group pairs by anchor
-    grouped_pairs = pairs.groupby('source').apply(lambda x: x[['content_source', 'content_target']].values.tolist()).tolist()
-
-    # Custom Torch Dataset
-
-    # Create the dataset
-    custom_dataset = MNRLDataset(grouped_pairs)
-
-    # Custom collate function for DataLoader
-    def custom_collate_fn(batch):
-        anchors = [item["anchor"] for item in batch]
-        positives = [item["positive"] for item in batch]
-        # Flatten the list of positives and repeat anchors accordingly
-        flat_positives = [pos for sublist in positives for pos in sublist]
-        flat_anchors = [anchor for anchor, pos_list in zip(anchors, positives) for _ in pos_list]
-        return {"anchor": flat_anchors, "positive": flat_positives}
+    train_trace_dataset, val_trace_dataset = dataset.split(0.1)
+    train_dataset = to_mnrl_dataset(train_trace_dataset)
+    val_dataset = to_mnrl_dataset(val_trace_dataset)
 
     # Load a pre-trained SentenceTransformer model
     model = SentenceTransformer(
@@ -80,10 +68,11 @@ def train_mnrl(artifact_df: DataFrame, trace_df: DataFrame, output_path: str, n_
     trainer = SentenceTransformerTrainer(
         model=model,
         args=args,
-        train_dataset=custom_dataset,
-        loss=loss,
-        data_collator=custom_collate_fn,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,
+        loss=loss
     )
 
     # Train the model
     trainer.train()
+    return trainer.model
