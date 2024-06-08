@@ -48,6 +48,8 @@ def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None,
     if title:
         print(title)
         print(metrics)
+
+    model.to('cpu')
     return metrics, trace_predictions
 
 
