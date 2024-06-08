@@ -51,6 +51,13 @@ def get_device(disable_logs: bool = False):
     return device
 
 
+def get_gpu_memory_usage():
+    """Return the current GPU memory usage in MB."""
+    torch.cuda.empty_cache()
+    allocated = torch.cuda.memory_allocated()
+    return allocated / 1024 ** 2  # convert from Bytes to MB
+
+
 def scale(matrix):
     reshaped_matrix = matrix.reshape(-1, 1)
     # Apply MinMax scaling

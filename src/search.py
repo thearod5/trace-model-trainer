@@ -1,6 +1,8 @@
+import gc
 from itertools import product
 from typing import List
 
+import torch
 from pandas import DataFrame
 from tqdm import tqdm
 
@@ -8,6 +10,7 @@ from constants import OUTPUT_PATH
 from infra.eval import eval_model
 from infra.generic_trainer import generic_train
 from tdata.reader import read_project
+from utils import get_gpu_memory_usage
 
 
 def search(train_dataset_path: str, test_dataset_path: str, models: List[str], options, disable_logs: bool = False,
@@ -21,6 +24,9 @@ def search(train_dataset_path: str, test_dataset_path: str, models: List[str], o
         entries.append(metrics)
 
         for iterable_kwargs in tqdm(options, desc="Iterating through options"):
+            if torch.cuda.is_available():
+                print(f"GPU Memory Usage before training {model_name}: {get_gpu_memory_usage()}")
+
             # Train
             trained_model = generic_train(train_dataset,
                                           model_name=model_name,
@@ -30,8 +36,17 @@ def search(train_dataset_path: str, test_dataset_path: str, models: List[str], o
                                           **iterable_kwargs)
 
             metrics, predictions = eval_model(trained_model, test_dataset, disable_logs=disable_logs)
-            trained_model = None
             entries.append({"model": model_name, **iterable_kwargs, **metrics})
+
+            # cleanup
+            del trained_model
+            gc.collect()
+            torch.cuda.empty_cache()
+
+            # Display GPU memory usage after cleanup
+            if torch.cuda.is_available():
+                print(f"GPU Memory Usage after cleaning up {model_name}: {get_gpu_memory_usage()}")
+
     return DataFrame(entries)
 
 
