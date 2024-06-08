@@ -39,6 +39,7 @@ def search(train_dataset_path: str, test_dataset_path: str, models: List[str], o
             entries.append({"model": model_name, **iterable_kwargs, **metrics})
 
             # cleanup
+            trained_model.to('cpu')
             del trained_model
             gc.collect()
             torch.cuda.empty_cache()
