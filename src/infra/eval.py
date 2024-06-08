@@ -11,7 +11,10 @@ from tdata.types import TracePrediction
 from utils import get_device, scale, t_id_creator
 
 
-def eval_model(model, dataset: TraceDataset, title=None, print_missing_links: bool = False, disable_logs: bool = False):
+def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None, print_missing_links: bool = False,
+               disable_logs: bool = False):
+    if model_name:
+        model = SentenceTransformer(model_name)
     device = get_device(disable_logs=disable_logs)
     model.eval()
     model = model.to(device)

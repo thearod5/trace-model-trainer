@@ -2,7 +2,6 @@ from itertools import product
 from typing import List
 
 from pandas import DataFrame
-from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
 from constants import OUTPUT_PATH
@@ -18,8 +17,7 @@ def search(train_dataset_path: str, test_dataset_path: str, models: List[str], o
     entries = []
 
     for model_name in models:
-        baseline_model = SentenceTransformer(model_name)
-        metrics, _ = eval_model(baseline_model, test_dataset, disable_logs=disable_logs)
+        metrics, _ = eval_model(None, test_dataset, model_name=model_name, disable_logs=disable_logs)
         entries.append(metrics)
 
         for iterable_kwargs in tqdm(options, desc="Iterating through options"):
@@ -32,6 +30,7 @@ def search(train_dataset_path: str, test_dataset_path: str, models: List[str], o
                                           **iterable_kwargs)
 
             metrics, predictions = eval_model(trained_model, test_dataset, disable_logs=disable_logs)
+            trained_model = None
             entries.append({"model": model_name, **iterable_kwargs, **metrics})
     return DataFrame(entries)
 
