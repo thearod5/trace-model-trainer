@@ -6,10 +6,9 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.metrics.pairwise import cosine_similarity
 
-from
 from tdata.trace_dataset import TraceDataset
 from tdata.types import TracePrediction
-from utils import get_device, scale, t_id_creator
+from utils import clear_memory, get_device, scale, t_id_creator
 
 
 def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None, print_missing_links: bool = False,
