@@ -8,14 +8,14 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from tdata.trace_dataset import TraceDataset
 from tdata.types import TracePrediction
-from utils import get_device, t_id_creator
+from utils import get_device, scale, t_id_creator
 
 
-def eval_model(model, dataset: TraceDataset, title=None, print_missing_links: bool = False):
-    device = get_device()
+def eval_model(model, dataset: TraceDataset, title=None, print_missing_links: bool = False, disable_logs: bool = False):
+    device = get_device(disable_logs=disable_logs)
     model.eval()
     model = model.to(device)
-    trace_predictions = predict_scores(model, dataset)
+    trace_predictions = predict_scores(model, dataset, disable_logs=disable_logs)
 
     ap_scores = calculate_map(trace_predictions)
 
@@ -63,18 +63,24 @@ def calculate_map(trace_predictions):
     return ap_scores
 
 
-def predict_scores(model: SentenceTransformer, dataset: TraceDataset, use_ids: bool = True) -> List[TracePrediction]:
+def predict_scores(model: SentenceTransformer,
+                   dataset: TraceDataset,
+                   use_ids: bool = True,
+                   disable_logs: bool = False,
+                   use_scaling: bool = True) -> List[TracePrediction]:
     content_ids = list(dataset.artifact_map.keys())
-    content_set = [f"({a_id}) {a_c}" for a_id, a_c in dataset.artifact_map.items()]
-    embeddings = model.encode(content_set, convert_to_tensor=False, show_progress_bar=True)
+    content_set = [f"({a_id}) {a_c}" if use_ids else a_c for a_id, a_c in dataset.artifact_map.items()]
+    embeddings = model.encode(content_set, convert_to_tensor=False, show_progress_bar=not disable_logs)
     embedding_map = {a_id: e for a_id, e in zip(content_ids, embeddings)}
 
+    predictions = []
     for source_artifact_ids, target_artifact_ids in dataset.get_layer_iterator():
         source_embeddings = np.stack([embedding_map[s_id] for s_id in source_artifact_ids])
         target_embeddings = np.stack([embedding_map[t_id] for t_id in target_artifact_ids])
 
         scores = cosine_similarity(source_embeddings, target_embeddings)
-        predictions = []
+        if use_scaling:
+            scores = scale(scores)
         for i, s_id in enumerate(source_artifact_ids):
             for j, t_id in enumerate(target_artifact_ids):
                 score = scores[i, j]

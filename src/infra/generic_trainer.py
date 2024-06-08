@@ -31,7 +31,6 @@ def generic_train(dataset: TraceDataset,
                   batch_size: int = 16,
                   learning_rate=5e-6,
                   warm_up_ration: float = 0.1,
-                  logging_steps: int = 100,
                   **kwargs):
     assert loss_name in loss2function, f"{loss_name} not one of {loss2function.keys()}"
     loss_fnc = loss2function[loss_name]
@@ -69,7 +68,7 @@ def generic_train(dataset: TraceDataset,
         save_strategy="epoch",
         save_steps=1,
         save_total_limit=1,
-        logging_steps=logging_steps,
+        logging_strategy="no",
         run_name=run_name,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",

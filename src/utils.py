@@ -2,6 +2,7 @@ import inspect
 import json
 
 import torch
+from sklearn.preprocessing import minmax_scale
 
 
 def read_json(f):
@@ -43,7 +44,17 @@ def has_param(f, param):
         return False
 
 
-def get_device():
+def get_device(disable_logs: bool = False):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("Using device:", device)
+    if not disable_logs:
+        print("Using device:", device)
     return device
+
+
+def scale(matrix):
+    reshaped_matrix = matrix.reshape(-1, 1)
+    # Apply MinMax scaling
+    scaled_matrix = minmax_scale(reshaped_matrix)
+    # Reshape back to the original matrix shape
+    scaled_matrix = scaled_matrix.reshape(matrix.shape)
+    return scaled_matrix

@@ -8,7 +8,7 @@ from tdata.trace_dataset import TraceDataset
 from utils import has_param, read_json
 
 
-def read_project(project_path: str) -> TraceDataset:
+def read_project(project_path: str, disable_logs: bool = False) -> TraceDataset:
     project_path = os.path.abspath(project_path)
 
     tim = read_tim(project_path)
@@ -20,8 +20,9 @@ def read_project(project_path: str) -> TraceDataset:
     artifact_df = create_artifact_df(project_path, file2layer)
     trace_df = create_trace_df(project_path, file2traced_layers.keys())
 
-    print("Artifacts:", len(artifact_df))
-    print("Traces:", len(trace_df))
+    if not disable_logs:
+        print("Artifacts:", len(artifact_df))
+        print("Traces:", len(trace_df))
     return TraceDataset(artifact_df, trace_df, layer_df)
 
 
