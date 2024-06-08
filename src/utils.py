@@ -1,6 +1,8 @@
 import inspect
 import json
 
+import torch
+
 
 def read_json(f):
     with open(f) as file_pointer:
@@ -39,3 +41,9 @@ def has_param(f, param):
     except ValueError:
         # If `f` is not a callable, return False
         return False
+
+
+def get_device():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Using device:", device)
+    return device

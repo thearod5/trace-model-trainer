@@ -8,7 +8,7 @@ from tdata.trace_dataset import TraceDataset
 from utils import has_param, read_json
 
 
-def read_project(project_path: str):
+def read_project(project_path: str) -> TraceDataset:
     project_path = os.path.abspath(project_path)
 
     tim = read_tim(project_path)

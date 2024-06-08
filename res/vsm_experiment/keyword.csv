@@ -1,0 +1,10 @@
+id,content
+Display,A page presented to the user.
+View,A display presented to the user.
+Artifact,An artifact is a text-based document in a software project.
+Node,A node in the artifact tree.
+Table,A table displaying information
+Artifact Neighborhood,The parent and children related to a specified artifact.
+Artifact Table,A tabular display of a set of artifacts.
+Artifact Tree,A set of artifacts and links between them displayed in a tree layout.
+Graph,A view in the application that displays the set of artifact trees in a project.
