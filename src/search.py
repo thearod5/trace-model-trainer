@@ -20,8 +20,8 @@ def search(train_dataset_path: str, test_dataset_path: str, models: List[str], o
     entries = []
 
     for model_name in models:
-        metrics, _ = eval_model(None, test_dataset, model_name=model_name, disable_logs=disable_logs)
-        entries.append(metrics)
+        baseline_metrics, _ = eval_model(None, test_dataset, model_name=model_name, disable_logs=disable_logs)
+        entries.append({"model": model_name, **baseline_metrics})
 
         for iterable_kwargs in tqdm(options, desc="Iterating through options"):
             entry = run_iteration(train_dataset, test_dataset, model_name, disable_logs=disable_logs, iterable_kwargs=iterable_kwargs,
