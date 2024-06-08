@@ -1,3 +1,4 @@
+import gc
 import inspect
 import json
 
@@ -51,11 +52,11 @@ def get_device(disable_logs: bool = False):
     return device
 
 
-def get_gpu_memory_usage():
-    """Return the current GPU memory usage in MB."""
-    torch.cuda.empty_cache()
-    allocated = torch.cuda.memory_allocated()
-    return allocated / 1024 ** 2  # convert from Bytes to MB
+def print_gpu_memory():
+    allocated = torch.cuda.memory_allocated() / (1024 ** 3)
+    reserved = torch.cuda.memory_reserved() / (1024 ** 3)
+    print(f"Allocated memory: {allocated} GB")
+    print(f"Reserved memory: {reserved} GB")
 
 
 def scale(matrix):
@@ -65,3 +66,8 @@ def scale(matrix):
     # Reshape back to the original matrix shape
     scaled_matrix = scaled_matrix.reshape(matrix.shape)
     return scaled_matrix
+
+
+def clear_memory():
+    gc.collect()
+    torch.cuda.empty_cache()

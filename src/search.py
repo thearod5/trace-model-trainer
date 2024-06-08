@@ -1,4 +1,3 @@
-import gc
 from itertools import product
 from typing import Dict, List
 
@@ -11,7 +10,7 @@ from infra.eval import eval_model
 from infra.generic_trainer import generic_train
 from tdata.reader import read_project
 from tdata.trace_dataset import TraceDataset
-from utils import get_gpu_memory_usage
+from utils import clear_memory, print_gpu_memory
 
 
 def search(train_dataset_path: str, test_dataset_path: str, models: List[str], options, disable_logs: bool = False,
@@ -35,7 +34,8 @@ def search(train_dataset_path: str, test_dataset_path: str, models: List[str], o
 def run_iteration(train_dataset: TraceDataset, test_dataset: TraceDataset, model_name: str, disable_logs: bool, iterable_kwargs: Dict,
                   **kwargs):
     if torch.cuda.is_available():
-        print(f"GPU Memory Usage before training {model_name}: {get_gpu_memory_usage()}")
+        print("New Iteration")
+        print_gpu_memory()
 
     # Train
     trained_model = generic_train(train_dataset,
@@ -50,12 +50,12 @@ def run_iteration(train_dataset: TraceDataset, test_dataset: TraceDataset, model
     # cleanup
     trained_model.to('cpu')
     del trained_model
-    gc.collect()
-    torch.cuda.empty_cache()
+    clear_memory()
 
     # Display GPU memory usage after cleanup
     if torch.cuda.is_available():
-        print(f"GPU Memory Usage after cleaning up {model_name}: {get_gpu_memory_usage()}")
+        print("After Cleanup")
+        print_gpu_memory()
     return {"model": model_name, **iterable_kwargs, **metrics}
 
 

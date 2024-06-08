@@ -6,6 +6,7 @@ from transformers import get_scheduler
 
 from tdata.converts import to_dataset
 from tdata.trace_dataset import TraceDataset
+from utils import clear_memory
 
 loss2function = {
     "cosent": losses.CoSENTLoss,
@@ -102,4 +103,6 @@ def generic_train(dataset: TraceDataset,
 
     # Train the model
     trainer.train()
+    clear_memory()
+
     return trainer.model

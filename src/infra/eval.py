@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.metrics.pairwise import cosine_similarity
 
+from
 from tdata.trace_dataset import TraceDataset
 from tdata.types import TracePrediction
 from utils import get_device, scale, t_id_creator
@@ -17,7 +18,7 @@ def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None,
         model = SentenceTransformer(model_name)
     device = get_device(disable_logs=disable_logs)
     model.eval()
-    model = model.to(device)
+    model.to(device)
     trace_predictions = predict_scores(model, dataset, disable_logs=disable_logs)
 
     ap_scores = calculate_map(trace_predictions)
@@ -50,6 +51,7 @@ def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None,
         print(metrics)
 
     model.to('cpu')
+    clear_memory()
     return metrics, trace_predictions
 
 
