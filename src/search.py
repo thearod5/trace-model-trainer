@@ -1,4 +1,5 @@
 from itertools import product
+from typing import List
 
 from pandas import DataFrame
 from sentence_transformers import SentenceTransformer
@@ -10,28 +11,28 @@ from infra.generic_trainer import generic_train
 from tdata.reader import read_project
 
 
-def search(train_dataset_path: str, test_dataset_path: str, iterable, model_name: str = None, disable_logs: bool = False,
+def search(train_dataset_path: str, test_dataset_path: str, models: List[str], options, disable_logs: bool = False,
            **kwargs) -> DataFrame:
     train_dataset = read_project(train_dataset_path, disable_logs=disable_logs)
     test_dataset = read_project(test_dataset_path, disable_logs=disable_logs)
     entries = []
 
-    if model_name:
+    for model_name in models:
         baseline_model = SentenceTransformer(model_name)
         metrics, _ = eval_model(baseline_model, test_dataset, disable_logs=disable_logs)
         entries.append(metrics)
 
-    for iterable_kwargs in tqdm(iterable, desc="Iterating through options"):
-        # Train
-        trained_model = generic_train(train_dataset,
-                                      model_name=model_name,
-                                      output_path=OUTPUT_PATH,
-                                      disable_tqdm=disable_logs,
-                                      **kwargs,
-                                      **iterable_kwargs)
+        for iterable_kwargs in tqdm(options, desc="Iterating through options"):
+            # Train
+            trained_model = generic_train(train_dataset,
+                                          model_name=model_name,
+                                          output_path=OUTPUT_PATH,
+                                          disable_tqdm=disable_logs,
+                                          **kwargs,
+                                          **iterable_kwargs)
 
-        metrics, predictions = eval_model(trained_model, test_dataset, disable_logs=disable_logs)
-        entries.append({**iterable_kwargs, **metrics})
+            metrics, predictions = eval_model(trained_model, test_dataset, disable_logs=disable_logs)
+            entries.append({"model": model_name, **iterable_kwargs, **metrics})
     return DataFrame(entries)
 
 
