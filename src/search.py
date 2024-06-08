@@ -8,11 +8,12 @@ from constants import OUTPUT_PATH
 from infra.eval import eval_model
 from infra.generic_trainer import generic_train
 from tdata.reader import read_project
-from tdata.trace_dataset import TraceDataset
 
 
-def search(train_dataset: TraceDataset, test_dataset: TraceDataset, iterable, baseline_model: SentenceTransformer = None,
+def search(train_dataset_path: str, test_dataset_path: str, iterable, baseline_model: SentenceTransformer = None,
            **kwargs) -> DataFrame:
+    train_dataset = read_project(train_dataset_path)
+    test_dataset = read_project(test_dataset_path)
     entries = []
 
     if baseline_model:
@@ -58,8 +59,8 @@ if __name__ == "__main__":
     #
 
     model = SentenceTransformer(model_name)
-    results_df = search(read_project(train_project_path),
-                        read_project(eval_project_path),
+    results_df = search(train_project_path,
+                        train_project_path,
                         options,
                         baseline_model=model,
                         disable_tqdm=True)
