@@ -7,6 +7,10 @@
     {
       "type": "Target",
       "fileName": "target.csv"
+    },
+    {
+      "type": "Keyword",
+      "fileName": "keyword.csv"
     }
   ],
   "traces": [
@@ -14,6 +18,11 @@
       "sourceType": "Source",
       "targetType": "Target",
       "fileName": "traces.csv"
+    },
+    {
+      "sourceType": "Keyword",
+      "targetType": "Keyword",
+      "fileName": "keyword_traces.csv"
     }
   ]
 }
