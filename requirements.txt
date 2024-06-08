@@ -4,3 +4,4 @@ scikit-learn
 pandas
 datasets
 accelerate
+python-dotenv

@@ -1,8 +1,9 @@
+from collections import defaultdict
 from typing import List
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.metrics.pairwise import cosine_similarity
 
 from tdata.trace_dataset import TraceDataset
@@ -16,6 +17,8 @@ def eval_model(model, dataset: TraceDataset, title=None, print_missing_links: bo
     model = model.to(device)
     trace_predictions = predict_scores(model, dataset)
 
+    ap_scores = calculate_map(trace_predictions)
+
     predictions = []
     labels = []
     for t in trace_predictions:
@@ -25,6 +28,7 @@ def eval_model(model, dataset: TraceDataset, title=None, print_missing_links: bo
     tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
 
     metrics = {
+        "map": sum(ap_scores) / len(ap_scores),
         "precision": precision_score(labels, predictions),
         "recall": recall_score(labels, predictions),
         "f1": f1_score(labels, predictions),
@@ -42,6 +46,21 @@ def eval_model(model, dataset: TraceDataset, title=None, print_missing_links: bo
         print(title)
         print(metrics)
     return metrics, trace_predictions
+
+
+def calculate_map(trace_predictions):
+    query2preds = defaultdict(list)
+    for trace in trace_predictions:
+        query2preds[trace.target].append(trace)
+    ap_scores = []
+    for target, predictions in query2preds.items():
+        scores = [p.score for p in predictions]
+        labels = [p.label for p in predictions]
+        ap = average_precision_score(labels, scores)
+        if np.isnan(ap):
+            continue
+        ap_scores.append(ap)
+    return ap_scores
 
 
 def predict_scores(model: SentenceTransformer, dataset: TraceDataset, use_ids: bool = True) -> List[TracePrediction]:

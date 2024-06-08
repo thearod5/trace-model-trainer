@@ -30,6 +30,8 @@ def generic_train(dataset: TraceDataset,
                   output_path: str = None,
                   batch_size: int = 16,
                   learning_rate=5e-6,
+                  warm_up_ration: float = 0.1,
+                  logging_steps: int = 100,
                   **kwargs):
     assert loss_name in loss2function, f"{loss_name} not one of {loss2function.keys()}"
     loss_fnc = loss2function[loss_name]
@@ -59,7 +61,7 @@ def generic_train(dataset: TraceDataset,
         num_train_epochs=n_epochs,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        warmup_ratio=0.1,
+        warmup_ratio=warm_up_ration,
         fp16=torch.cuda.is_available(),
         bf16=False,
         eval_strategy="epoch",
@@ -67,7 +69,7 @@ def generic_train(dataset: TraceDataset,
         save_strategy="epoch",
         save_steps=1,
         save_total_limit=1,
-        logging_steps=100,
+        logging_steps=logging_steps,
         run_name=run_name,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
@@ -82,7 +84,7 @@ def generic_train(dataset: TraceDataset,
     scheduler = get_scheduler(
         "linear",
         optimizer=optimizer,
-        num_warmup_steps=total_steps * 0.1,  # 10% of training as warmup
+        num_warmup_steps=total_steps * warm_up_ration,  # 10% of training as warmup
         num_training_steps=total_steps
     )
 
