@@ -13,7 +13,7 @@ from utils import clear_memory, get_device, scale, t_id_creator
 
 
 def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None, print_missing_links: bool = False,
-               disable_logs: bool = False, include_vsm: bool = True):
+               disable_logs: bool = False):
     if model_name:
         model = SentenceTransformer(model_name)
     device = get_device(disable_logs=disable_logs)
@@ -65,6 +65,7 @@ def calculate_metrics(trace_predictions, prefix: str = None):
     }
     if prefix:
         metrics = {f"{prefix}_{k}": v for k, v in metrics.items()}
+    metrics = {k: round(v, 2) for k, v in metrics.items()}
     return metrics
 
 
