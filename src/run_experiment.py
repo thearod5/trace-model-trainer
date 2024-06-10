@@ -27,8 +27,10 @@ if __name__ == "__main__":
                                   n_epochs=20,
                                   disable_tqdm=True)
 
-    m3, _ = eval_model(trained_model, test_dataset_transformed)
-    m4, _ = eval_model(trained_model, test_dataset)
+    m3, _ = eval_model(trained_model, test_dataset)
+    m4, _ = eval_model(trained_model, test_dataset_transformed)
 
-    print_metrics([m1, m2, m3, m4],
+    print_metrics([m1, m3],
+                  ["original (baseline)", "original (trained)"])
+    print_metrics([m1, m4],
                   ["original (baseline)", "transformed (baseline)", "original (trained)", "transformed (trained)"])

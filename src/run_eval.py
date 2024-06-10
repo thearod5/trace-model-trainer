@@ -15,13 +15,13 @@ if __name__ == "__main__":
     test_dataset_transformed = create_experiment_dataset(test_dataset)
 
     # Baseline scores
-    m1, _ = eval_vsm(test_dataset, title="VSM Metrics (original)")
+    m1, _ = eval_vsm(test_dataset)
 
     # Load SentenceTransformer model
     model = SentenceTransformer(model_name)
 
     # Evaluate
-    m2, _ = eval_model(model, test_dataset, title="Test Metrics (original)")
+    m2, _ = eval_model(model, test_dataset)
 
     metrics = [m1, m2]
     metric_names = ["vsm", model_name]
