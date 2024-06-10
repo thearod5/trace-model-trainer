@@ -158,8 +158,6 @@ def print_links(trace_predictions):
 
 def print_metrics(metrics, metric_names):
     df = DataFrame(metrics)
-    for result_set, set_name in zip(metrics, metric_names):
-        print(set_name, result_set)
-
-    df["name"] = metric_names
+    df.insert(0, "name", metric_names)
+    print(df)
     return df
