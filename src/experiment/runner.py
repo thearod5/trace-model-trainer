@@ -35,6 +35,6 @@ def run_experiment(eval_project_path: str, model_name: str):
     m3, _ = eval_model(trained_model, test_dataset)
     m4, _ = eval_model(trained_model, test_dataset_transformed)
     print_metrics([m1, m3],
-                  ["original (baseline)", "original (trained)"])
+                  ["eval data (baseline)", "eval data (post-training)"])
     print_metrics([m1, m4],
-                  ["original (baseline)", "transformed (baseline)", "original (trained)", "transformed (trained)"])
+                  ["training data (baseline)", "training data (trained)"])

@@ -1,9 +1,14 @@
+from eval import run_eval
 from experiment.runner import run_experiment
 from utils import get_or_prompt
 
 tools = {
     "experiment": {
         "func": run_experiment,
+        "args": ["EVAL_PROJECT_PATH", "MODEL_NAME"]
+    },
+    "eval": {
+        "func": run_eval,
         "args": ["EVAL_PROJECT_PATH", "MODEL_NAME"]
     }
 }
