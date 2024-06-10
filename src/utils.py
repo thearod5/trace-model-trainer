@@ -2,7 +2,7 @@ import gc
 import inspect
 import json
 import os
-from typing import Iterable
+from typing import Any, Callable, Iterable
 
 import torch
 from sklearn.preprocessing import minmax_scale
@@ -75,13 +75,16 @@ def clear_memory():
     torch.cuda.empty_cache()
 
 
-def get_or_prompt(item_key: str, prompt: str = None, options: Iterable[str] = None):
+def get_or_prompt(item_key: str, prompt: str = None, options: Iterable[str] = None, type_converter: Callable[[str], Any] = str):
     if prompt is None:
         prompt = item_key
     if item_key not in os.environ:
         options_display = "(" + ",".join(options) + ")" if options else ""
-        return input(f"{prompt}{options_display}:")
-    item_value = os.environ[item_key]
+        item_value = input(f"{prompt}{options_display}:")
+    else:
+        item_value = os.environ[item_key]
+
     if "PATH" in item_key:
-        return os.path.expanduser(item_value)
-    return item_value
+        item_value = os.path.expanduser(item_value)
+
+    return type_converter(item_value)

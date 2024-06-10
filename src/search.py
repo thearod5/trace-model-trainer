@@ -1,3 +1,4 @@
+import os
 from itertools import product
 from typing import Dict, List
 
@@ -11,6 +12,19 @@ from infra.generic_trainer import generic_train
 from tdata.reader import read_project
 from tdata.trace_dataset import TraceDataset
 from utils import clear_memory, print_gpu_memory
+
+
+def run_search(train_project_path: str, eval_project_path: str, loss_func_names: List[str], models: List[str]):
+    best_metric_name = "map"
+    options = expand_dict_combinations({"loss_name": loss_func_names})
+
+    results_df = search(train_dataset_path=train_project_path,
+                        test_dataset_path=eval_project_path,
+                        models=models,
+                        options=options,
+                        disable_logs=True)
+    results_df.to_csv(os.path.expanduser("~/desktop/results.csv"), index=False)
+    print(results_df.sort_values(by=[best_metric_name], ascending=False))
 
 
 def search(train_dataset_path: str, test_dataset_path: str, models: List[str], options, disable_logs: bool = False,
