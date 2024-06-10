@@ -35,4 +35,4 @@ def run_experiment(eval_project_path: str, model_name: str):
     m3, _ = eval_model(trained_model, test_dataset)
     m4, _ = eval_model(trained_model, test_dataset_transformed)
     print_metrics([m1, m3],
-                  ["baseline", "post-training"])
+                  ["before-training", "after-training"])
