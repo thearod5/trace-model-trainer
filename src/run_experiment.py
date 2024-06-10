@@ -4,10 +4,11 @@ from experiment.runner import create_experiment_dataset
 from infra.eval import eval_model, print_metrics
 from infra.generic_trainer import generic_train
 from tdata.reader import read_project
+from utils import get_or_prompt
 
 if __name__ == "__main__":
-    eval_project_path = "../res/safa_nl"
-    model_name = "all-MiniLM-L6-v2"
+    eval_project_path = get_or_prompt("EVAL_PROJECT_PATH", "Eval Project Path: ")
+    model_name = get_or_prompt("MODEL", "Model: ")
 
     test_dataset = read_project(eval_project_path)
     test_dataset_transformed = create_experiment_dataset(read_project(eval_project_path))

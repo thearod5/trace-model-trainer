@@ -1,13 +1,15 @@
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
 from experiment.runner import create_experiment_dataset
 from infra.eval import eval_model, eval_vsm, print_metrics
-from infra.generic_trainer import generic_train
 from tdata.reader import read_project
+from utils import get_or_prompt
 
 if __name__ == "__main__":
-    eval_project_path = "../res/safa_nl"
-    model_name = "all-MiniLM-L6-v2"
+    load_dotenv()
+    eval_project_path = get_or_prompt("EVAL_PROJECT_PATH", "Eval Project Path: ")
+    model_name = get_or_prompt("MODEL", "Model: ")
 
     test_dataset = read_project(eval_project_path)
     test_dataset_transformed = create_experiment_dataset(test_dataset)
@@ -20,17 +22,7 @@ if __name__ == "__main__":
 
     # Evaluate
     m2, _ = eval_model(model, test_dataset, title="Test Metrics (original)")
-    m3, _ = eval_model(model, test_dataset_transformed, title="Test Metrics (transformed)")
 
-    # Training
-    trained_model = generic_train(test_dataset_transformed,
-                                  "mnrl_symetric",
-                                  model_name=model_name)
-
-    m4, _ = eval_model(trained_model, test_dataset, title="Test Metrics (original-trained)")
-    m5, _ = eval_model(model, test_dataset_transformed, title="Test Metrics (transformed-trained)")
-
-    metrics = [m1, m2, m3, m4, m5]
-    metric_names = ["vsm", "model (baseline)", "model (baseline-transformed)", "model (baselined-trained)",
-                    "model (transformed-trained)"]
+    metrics = [m1, m2]
+    metric_names = ["vsm", model_name]
     print_metrics(metrics, metric_names)

@@ -1,6 +1,7 @@
 import gc
 import inspect
 import json
+import os
 
 import torch
 from sklearn.preprocessing import minmax_scale
@@ -71,3 +72,12 @@ def scale(matrix):
 def clear_memory():
     gc.collect()
     torch.cuda.empty_cache()
+
+
+def get_or_prompt(item_key: str, prompt: str):
+    if item_key not in os.environ:
+        return input(prompt)
+    item_value = os.environ[item_key]
+    if "PATH" in item_key:
+        return os.path.expanduser(item_value)
+    return item_value

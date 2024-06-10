@@ -9,6 +9,8 @@ from utils import has_param, read_json
 
 
 def read_project(project_path: str, disable_logs: bool = False) -> TraceDataset:
+    if not os.path.isdir(project_path):
+        raise Exception(f"'{project_path}' does not contain project.")
     project_path = os.path.abspath(project_path)
 
     tim = read_tim(project_path)

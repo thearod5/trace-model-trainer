@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import List
 
 import numpy as np
+from pandas import DataFrame
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, fbeta_score, precision_score, recall_score
 from sklearn.metrics.pairwise import cosine_similarity
@@ -87,8 +88,7 @@ def calculate_map(trace_predictions):
 def predict_scores(model: SentenceTransformer,
                    dataset: TraceDataset,
                    use_ids: bool = True,
-                   disable_logs: bool = False,
-                   use_scaling: bool = True) -> List[TracePrediction]:
+                   disable_logs: bool = False) -> List[TracePrediction]:
     content_ids = list(dataset.artifact_map.keys())
     content_set = [f"({a_id}) {a_c}" if use_ids else a_c for a_id, a_c in dataset.artifact_map.items()]
     embeddings = model.encode(content_set, convert_to_tensor=False, show_progress_bar=not disable_logs)
@@ -100,8 +100,7 @@ def predict_scores(model: SentenceTransformer,
         target_embeddings = np.stack([embedding_map[t_id] for t_id in target_artifact_ids])
 
         scores = cosine_similarity(source_embeddings, target_embeddings)
-        if use_scaling:
-            scores = scale(scores)
+        scores = scale(scores)
         for i, s_id in enumerate(source_artifact_ids):
             for j, t_id in enumerate(target_artifact_ids):
                 score = scores[i, j]
@@ -158,5 +157,9 @@ def print_links(trace_predictions):
 
 
 def print_metrics(metrics, metric_names):
+    df = DataFrame(metrics)
     for result_set, set_name in zip(metrics, metric_names):
         print(set_name, result_set)
+
+    df["name"] = metric_names
+    return df
