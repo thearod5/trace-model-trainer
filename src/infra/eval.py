@@ -159,5 +159,5 @@ def print_links(trace_predictions):
 def print_metrics(metrics, metric_names):
     df = DataFrame(metrics)
     df.insert(0, "name", metric_names)
-    print(df)
+    print(df.to_string(index=False))
     return df
