@@ -30,7 +30,8 @@ def create_artifact_df(project_path: str, file2layer: Dict[str, str]):
     dfs = []
     for f in file2layer.keys():
         df = pd.read_csv(os.path.join(project_path, f))
-        df["layer"] = file2layer[f]
+        if "layer" not in df.columns:
+            df["layer"] = file2layer[f]
         dfs.append(df)
     return pd.concat(dfs)
 

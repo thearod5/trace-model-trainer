@@ -4,6 +4,7 @@ from sentence_transformers import SentenceTransformer, SentenceTransformerModelC
 from torch.optim import Adam
 from transformers import get_scheduler
 
+from constants import OUTPUT_PATH
 from tdata.converts import to_dataset
 from tdata.trace_dataset import TraceDataset
 from utils import clear_memory
@@ -30,7 +31,7 @@ def generic_train(dataset: TraceDataset,
                   model_name: str = "all-MiniLM-L6-v2",
                   output_path: str = None,
                   batch_size: int = 16,
-                  learning_rate=5e-6,
+                  learning_rate=5e-5,
                   warm_up_ration: float = 0.1,
                   **kwargs):
     assert loss_name in loss2function, f"{loss_name} not one of {loss2function.keys()}"
@@ -39,6 +40,8 @@ def generic_train(dataset: TraceDataset,
 
     if val_trace_dataset is None:
         train_trace_dataset, val_trace_dataset = dataset.split(0.1)
+    if output_path is None:
+        output_path = OUTPUT_PATH
 
     # Merge to create pairs
     train_dataset = to_dataset(dataset, dataset_type)

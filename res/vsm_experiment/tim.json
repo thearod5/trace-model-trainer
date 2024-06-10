@@ -1,19 +1,15 @@
 {
   "artifacts": [
     {
-      "type": "Source",
-      "fileName": "source.csv"
-    },
-    {
-      "type": "Target",
-      "fileName": "target.csv"
+      "type": "Artifacts",
+      "fileName": "artifacts.csv"
     }
   ],
   "traces": [
     {
-      "sourceType": "Source",
-      "targetType": "Target",
-      "fileName": "traces.csv"
+      "fileName": "traces.json",
+      "sourceType": "Functional Requirement",
+      "targetType": "Feature"
     }
   ]
 }

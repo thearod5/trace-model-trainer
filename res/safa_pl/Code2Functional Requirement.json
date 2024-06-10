@@ -1,0 +1,484 @@
+{
+    "traces": [
+        {
+            "sourceName": "components/project/save/ProjectFilesInput.vue",
+            "targetName": "Generate TIM files",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/graph/artifact/ArtifactNodeDisplay.vue",
+            "targetName": "Display artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/UploadNewVersion.vue",
+            "targetName": "Upload files to project version",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/graph/artifact/ArtifactNodeActions.vue",
+            "targetName": "Display node action sidebar",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/graph/artifact/ArtifactMenu.vue",
+            "targetName": "Display node action sidebar",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/editor/ProjectButtons.vue",
+            "targetName": "Edit project metadata",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/table/ArtifactTable.vue",
+            "targetName": "Filter artifacts by type",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactListDisplay.vue",
+            "targetName": "Generate clustered parents",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/panel/ArtifactBodyPanel.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/table/ArtifactTable.vue",
+            "targetName": "Display artifact table",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/ProjectLoader.vue",
+            "targetName": "Switch project versions",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactContent.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/ProjectVersionStepper.vue",
+            "targetName": "Switch project versions",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/save/ProjectIdentifierInput.vue",
+            "targetName": "Edit project organization & team",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/table/ArtifactTable.vue",
+            "targetName": "Display artifact content",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/editor/SaveProjectInputs.vue",
+            "targetName": "Edit artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/save/SaveArtifactInputs.vue",
+            "targetName": "Create artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactErrors.vue",
+            "targetName": "Display artifact warnings",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/editor/SaveProjectInputs.vue",
+            "targetName": "Create artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/ProjectBuilder.vue",
+            "targetName": "Create projects from files in bulk",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/save/ArtifactSummary.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/upload/UploadPanelErrors.vue",
+            "targetName": "Upload files to project version",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/editor/SaveProjectModal.vue",
+            "targetName": "Edit project metadata",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactBodyDisplay.vue",
+            "targetName": "Display artifact content",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/table/VersionSelectorTable.vue",
+            "targetName": "Delete project versions",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/panel/ArtifactGenerationPanel.vue",
+            "targetName": "Generate single parent",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/ProjectBuilder.vue",
+            "targetName": "Import GitHub as project",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/table/ArtifactTable.vue",
+            "targetName": "Group artifact rows",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/upload/UploadPanelName.vue",
+            "targetName": "Upload files to project version",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/editor/ProjectButtons.vue",
+            "targetName": "Delete projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/ProjectLoader.vue",
+            "targetName": "Select projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/save/ProjectIdentifierInput.vue",
+            "targetName": "Edit project metadata",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/table/ArtifactTable.vue",
+            "targetName": "Filter artifact table by delta type",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/panel/ArtifactSummarizationPanel.vue",
+            "targetName": "Display artifact content",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/table/ArtifactTableRowActions.vue",
+            "targetName": "Delete artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/save/ProjectFilesInput.vue",
+            "targetName": "Create projects from files in bulk",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/save/ArtifactButtons.vue",
+            "targetName": "Delete artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactBody.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/CreateVersionModal.vue",
+            "targetName": "Create project versions",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/save/ArtifactButtons.vue",
+            "targetName": "Edit artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/panel/SaveArtifactPanel.vue",
+            "targetName": "Create artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/input/ProjectSelector.vue",
+            "targetName": "Select projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/editor/DeleteProjectModal.vue",
+            "targetName": "Delete projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactDocuments.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/table/ProjectSelectorTable.vue",
+            "targetName": "Search projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/input/ProjectSelector.vue",
+            "targetName": "Search projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/ProjectBuilder.vue",
+            "targetName": "Import Jira as project",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/graph/artifact/TraceLink.vue",
+            "targetName": "Display trace links",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/table/ArtifactTableRowActions.vue",
+            "targetName": "Edit artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/panel/ArtifactPanel.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/editor/ProjectDisplay.vue",
+            "targetName": "Display project metadata",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/table/ArtifactTable.vue",
+            "targetName": "Sort artifact rows",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/upload/UploadPanelList.vue",
+            "targetName": "Upload files to project version",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/input/VersionSelector.vue",
+            "targetName": "Switch project versions",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/save/ProjectFilesInput.vue",
+            "targetName": "Create projects through individual file uploads",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/panel/ArtifactBodyPanel.vue",
+            "targetName": "Display artifact content",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/upload/UploadPanel.vue",
+            "targetName": "Create projects from files in bulk",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactBodyDisplay.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/panel/ArtifactGenerationPanel.vue",
+            "targetName": "Generate clustered parents",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/graph/artifact/ArtifactNode.vue",
+            "targetName": "Display artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/save/ProjectFilesUploader.vue",
+            "targetName": "Create empty projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/editor/ProjectOverviewDisplay.vue",
+            "targetName": "Display project metadata",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactContentDisplay.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/save/ProjectFilesUploader.vue",
+            "targetName": "Create projects from files in bulk",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/save/SaveArtifactButtons.vue",
+            "targetName": "Delete artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/ProjectBuilder.vue",
+            "targetName": "Create projects through individual file uploads",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/panel/ProjectOverviewPanel.vue",
+            "targetName": "Display project metadata",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/input/VersionSelector.vue",
+            "targetName": "Delete project versions",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/ProjectVersionStepper.vue",
+            "targetName": "Select projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/table/ProjectSelectorTable.vue",
+            "targetName": "Select projects",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/save/SaveArtifactButtons.vue",
+            "targetName": "Edit artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactContentDisplay.vue",
+            "targetName": "Display artifact content",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactNameDisplay.vue",
+            "targetName": "Select artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/upload/UploadPanelErrors.vue",
+            "targetName": "Create projects through individual file uploads",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/graph/artifact/ArtifactNodeFooter.vue",
+            "targetName": "Display artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/upload/UploadPanel.vue",
+            "targetName": "Create projects through individual file uploads",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/graph/artifact/ArtifactMenu.vue",
+            "targetName": "View artifact neighborhood",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/creator/upload/UploadPanel.vue",
+            "targetName": "Upload files to project version",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/artifact/display/ArtifactTraces.vue",
+            "targetName": "Display parent and child artifacts",
+            "traceType": "MANUAL",
+            "score": 1
+        },
+        {
+            "sourceName": "components/project/selector/table/VersionSelectorTable.vue",
+            "targetName": "Switch project versions",
+            "traceType": "MANUAL",
+            "score": 1
+        }
+    ]
+}

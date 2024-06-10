@@ -22,6 +22,9 @@ class TraceDataset:
         self.artifact_map = {a['id']: get_content(a.to_dict()) for i, a in artifact_df.iterrows()}
         self.trace_map = {t_id_creator(r): r.to_dict() for i, r in trace_df.iterrows()}
 
+    def __copy__(self):
+        return TraceDataset(self.artifact_df.copy(), self.trace_df.copy(), self.layer_df.copy())
+
     def __len__(self):
         return len(self.trace_df)
 

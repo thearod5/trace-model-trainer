@@ -1,0 +1,259 @@
+id,content,layer
+Dark Mode,switch dark mode change background colors dark rather light,Feature
+App WIKI,app has wiki walk users interacting all features detail,Feature
+Refinement,refine performance models based what generated content is approved denied,Feature
+Fine-Tuning,fine tune custom models data improve their performance,Feature
+Lower-Level Artifact Generation,generate lower level higher level,Feature
+Higher-Level Artifact Generation,generate higher level requirements sets lower level requirements,Feature
+Summarize NL content,summarize content long form,Feature
+Code Summarization,generate summaries code files or blocks,Feature
+Model Selection,select models use generation tasks,Feature
+Artifact Layer Coverage,generate coverage information relationships two layers,Feature
+Trace Matrix Table,view sort group filter matrix showing what are related,Feature
+Trace Link Approval Display,display generated trace links approval,Feature
+Artifact Tree Nodes & Edges,interact trace links tree,Feature
+Custom Attributes Values,store values existing custom attributes,Feature
+Custom Attributes Layout,manage what custom attributes appear different types layout they appear,Feature
+Project Exporting,export data file download,Feature
+Custom Attributes Management,create custom attributes an track import export additional fields,Feature
+Model Evaluation,evaluate how well models perform tasks,Feature
+Model Sharing,Share custom models between users.,Feature
+Job Status,view status progress jobs,Feature
+Artifact Table,view sort group filter table,Feature
+Account Editing,Edit account details.,Feature
+TIM Tree,view an interactive graph how all types are related,Feature
+Websocket Messages,receive updates data when another user or asynchronous job updates something,Feature
+Change Commits,store commits undo redo changes version,Feature
+Snackbar Messages,present snackbar messages when things are saved uploads are scheduled or errors occur,Feature
+Email Updates,send email updates account creation password reset,Feature
+Project Versions,create new versions upload files existing ones delete versions no longer being used,Feature
+Projects,manage details projects or delete them,Feature
+Project Members Display,display members,Feature
+Project Rules,manage rules that generate warnings when broken,Feature
+View Display,display views subsets data,Feature
+Artifact Display,display content relationships an,Feature
+Model Management,manage custom models creating editing deleting them,Feature
+Model Pre-Training,pretrain models documentation improve performance specific domain,Feature
+Trace Link Generation,generate trace links,Feature
+Model Training,train model existing data improve performance tasks specific domain,Feature
+Privacy Policy,View our data privacy policy.,Feature
+Default Rules,Generate built-in warnings by default.,Feature
+Attack Protection,Protect against common attacks.,Feature
+Project Layout,generate layout or subset,Feature
+Project Members Management,manage members their permissions,Feature
+Artifact Type Directions,define rules restrict what types trace links are allowed types,Feature
+View Management,manage creation retrieval updating deletion views,Feature
+Delta View,display difference two versions what was added modified removed or related changed,Feature
+Project Rules Display,display warnings when rules are violated,Feature
+View Synchronization,keep projects uptodate other users asynchronous jobs make changes,Feature
+Trace Link Approval,approve decline generated trace links,Feature
+Project Version List,view load existing versions,Feature
+Project List,View and load existing projects. ,Feature
+Job Submission,submit jobs create update data bulk,Feature
+TIM Preview,view preview tim tree confirming its creation,Feature
+Project Trace Link Uploading,upload matrices trace links two types csv or json format,Feature
+Project Artifact Uploading,upload sets same type csv or json format,Feature
+Bulk Project Creation,quickly create set csv json files tim outline what files correspond what data,Feature
+Standard Project Creation,create importing trace links one file timeand view tim summary being created,Feature
+Password Reset,Reset and change account passwords.,Feature
+Account Login,log existing accounts access app,Feature
+Account Creation,Create new accounts.,Feature
+GitHub Integration,import code github sync their data github needed,Feature
+Jira Integration,import projects jira sync data jira needed,Feature
+Trace Link Management,manage creation retrieval updating deletion trace links,Feature
+Artifact Management,manage creation retrieval updating deletion,Feature
+Artifact Search,search all,Feature
+Artifact Tree Window,change viewport tree graph zoom pan what is view,Feature
+FTA View,all fta specific document functionality such logical nodes,Feature
+Safety Case View,all safetycase specific document functionality such creating safety case nodes,Feature
+Artifact Subtree,track subtrees so that their children be hidden related be displayed,Feature
+Artifact Type Management,manage types how they be related,Feature
+Save dark mode setting,changes dark mode sessions,Functional Requirement
+Toggle dark mode,toggle dark mode change app colors dark,Functional Requirement
+Link to project WIKI,click link settings view user guides app,Functional Requirement
+Leave a project,remove myself long am not last owner,Functional Requirement
+Group artifacts by change impact,group most likely impacted change,Functional Requirement
+Cluster groups of artifacts,cluster groups same level downstream tasks,Functional Requirement
+Provide feedback on generations,provide feedback generations help output meet goals,Functional Requirement
+Fine tune artifact generation models,finetune model adjust generation specific format domain,Functional Requirement
+Generate lower-level artifact content,generate content lowerlevel content higher level,Functional Requirement
+Generate higher-level artifact content,generate content higherlevel content lower level,Functional Requirement
+Summarize natural language,summarize content written natural language reduce length while capturing overall functionality,Functional Requirement
+Summarize python code,summarize python code reduce length while capturing overall functionality,Functional Requirement
+Evaluate model performance on trace prediction ,evaluate model performance based confirmed rejected trace links,Functional Requirement
+Fine tune base models,finetune base model downstream tasks,Functional Requirement
+Select custom models for tasks,select which predefined model use task,Functional Requirement
+Switch project versions,switch versions,Functional Requirement
+Display interactive walkthrough,walkthrough application,Functional Requirement
+Display orphan artifacts,what are missing traces two layers,Functional Requirement
+Display over-coverage,overcoverage two layers,Functional Requirement
+Display under-coverage,undercoverage two layers,Functional Requirement
+Filter trace matrix rows and columns,filter trace matrix table rows columns type,Functional Requirement
+Search artifacts,search their name body type,Functional Requirement
+Select trace links,select trace link view more details,Functional Requirement
+Upload files to project view,upload flat files current view,Functional Requirement
+Delete project versions,delete version,Functional Requirement
+Upload files to project version,upload new flat files version,Functional Requirement
+Create project versions,create new major minor or revision version,Functional Requirement
+Delete projects,an owner delete,Functional Requirement
+Edit project details,an admin edit name description,Functional Requirement
+Edit custom attribute values,edit custom attribute values,Functional Requirement
+Export custom attribute values,export custom attributes values csv or json,Functional Requirement
+Import custom attributes,import custom attributes csv or json,Functional Requirement
+Display trace matrix table,view trace matrix table,Functional Requirement
+Display artifact table,view table,Functional Requirement
+Undo change commits,undo committed change,Functional Requirement
+Redo change commits,redo committed change,Functional Requirement
+Delete attribute layouts,delete an existing attribute layout,Functional Requirement
+Create attribute layouts,add new attribute layout,Functional Requirement
+Edit attribute layouts,edit an existing attribute layout,Functional Requirement
+Display attribute layouts by artifact type,different layouts custom attributes based an type,Functional Requirement
+Create accounts through SSO,create an account using sso,Functional Requirement
+Display un-reviewed links as dashed,unreviewed trace links dotted lines chips,Functional Requirement
+Display custom attribute values,custom attributes values,Functional Requirement
+Edit custom attributes,edit custom attribute,Functional Requirement
+Delete custom attributes,delete custom attribute,Functional Requirement
+Add custom attributes,add custom attribute,Functional Requirement
+Synchronize GitHub data,synchronize data coming github,Functional Requirement
+Import GitHub to projects,import github an existing,Functional Requirement
+Disconnect GitHub integration,disconnect github account safa account,Functional Requirement
+Import GitHub as project,import github,Functional Requirement
+Display GitHub repositories by organization,list github repositories,Functional Requirement
+Disconnect Jira integration,disconnect jira account safa account,Functional Requirement
+Connect Jira integration,link jira account safa account,Functional Requirement
+Connect GitHub integration,link github account safa account,Functional Requirement
+Configure model training variables,configure advanced training variables,Functional Requirement
+Pre-train on generated documents and repositories,pretrain model generated documents repositories,Functional Requirement
+Revert model training tasks,revert most recent model training changes,Functional Requirement
+Display model training history,view records what trained model,Functional Requirement
+Display model training step,what step pretraining that model is,Functional Requirement
+Input keywords to compile pre-training materials,input keywords compile documents repositories train model,Functional Requirement
+Pre-train on repositories,pretrain model specific code repositories,Functional Requirement
+Generate TIM files,generate tim file,Functional Requirement
+Share custom models,share model another,Functional Requirement
+Edit custom models,edit model,Functional Requirement
+Use custom models from other projects,use model an existing,Functional Requirement
+Create views from subtrees,create view parent list child types,Functional Requirement
+Create table views,create table view that will not display graph mode,Functional Requirement
+Edit project members,an owner or admin edit permission level member if they have lower permissions myself,Functional Requirement
+Add project members,add new member permission level equal or lower myself,Functional Requirement
+Remove project members,an owner or admin remove member permission level equal or lower myself,Functional Requirement
+Display project members,members,Functional Requirement
+Search project members,search members,Functional Requirement
+Log in,log valid credentials,Functional Requirement
+Display hidden child count,how many children are hidden parent,Functional Requirement
+Display delta view layout,formatted layout when requesting delta including dealing not present current version,Functional Requirement
+Display job status,current status job progress completed or failed,Functional Requirement
+Display jobs,jobs created,Functional Requirement
+Display Jira projects by organization,list projects specific jira website,Functional Requirement
+Synchronize Jira data,synchronize data coming jira,Functional Requirement
+Import Jira as project,import jira,Functional Requirement
+Import Jira to projects,import jira an existing,Functional Requirement
+Create jobs,create job asynchronous execution,Functional Requirement
+Display job logs,logs occurring execution,Functional Requirement
+Generate layout of artifacts,generate layout views,Functional Requirement
+Add artifacts to a layout,add new an existing layout so that is placed well current layout,Functional Requirement
+Log out,I can log out.,Functional Requirement
+Save current graph layout,layout moving them,Functional Requirement
+Select and load project versions,select load version,Functional Requirement
+Update jobs in real-time,realtime job updates progress jobs,Functional Requirement
+Graph is responsive after changing modes,graph interactions load changing display mode,Functional Requirement
+Graph is responsive on initial page load,graph interactions load initial page load,Functional Requirement
+Graph is responsive after changing pages,graph interactions load changing pages,Functional Requirement
+Display artifact search match count,how many match search,Functional Requirement
+Create artifact types when creating artifacts,add new type when creating new,Functional Requirement
+Sort artifact rows,sort their fields,Functional Requirement
+Group artifact rows,group their fields,Functional Requirement
+Display count of generated links in groups,counts grouped generated trace links,Functional Requirement
+Group generated links,group generated trace links their fields,Functional Requirement
+Sort generated links,sort trace links their fields,Functional Requirement
+Un-review generated links,unreview an approved or declined trace link,Functional Requirement
+Display users currently on a view,who is working current view,Functional Requirement
+Delete an account,delete account typing password,Functional Requirement
+Receive notifications from layout updates,get notified when layout has been updated,Functional Requirement
+Display generated links,approved declined unreviewed trace links,Functional Requirement
+Generate trace links,generate list trace links using trained model,Functional Requirement
+Edit a password,edit password while logged,Functional Requirement
+Create projects through creation steps,create standard steps upload files,Functional Requirement
+Delete uploaded artifact files,delete set,Functional Requirement
+Create projects from files in bulk,create set flat files representing trace links,Functional Requirement
+Display artifact warnings,an warnings graph table views,Functional Requirement
+Display TIM tree graph,tim tree,Functional Requirement
+Display default warnings for safety cases,default warnings safety case structure,Functional Requirement
+Synchronize project data,automatically download any changes data other users or asynchronous jobs,Functional Requirement
+Create change commits,create commit change entities,Functional Requirement
+Display errors in snackbar,will snackbar error when an api request fails,Functional Requirement
+Display actions on notifications,perform an action result notification,Functional Requirement
+Download project version files,download current version csv or json,Functional Requirement
+Display current view,what view am currently viewing,Functional Requirement
+Delete trace links,delete trace link,Functional Requirement
+Delete custom models,delete model,Functional Requirement
+Create custom models,create new model,Functional Requirement
+Train on project trace links,train model existing trace links,Functional Requirement
+Generate project layout during import,generate projects layout importing,Functional Requirement
+Pre-train on documents,pretrain model uploaded documents,Functional Requirement
+Generate FMEA custom attributes,generate fmea attributes traced children,Functional Requirement
+Delete rules,I can delete a rule.,Functional Requirement
+Edit rules,I can edit a rule.,Functional Requirement
+Create rules,create new rule,Functional Requirement
+Delete jobs,delete logged job,Functional Requirement
+Create empty projects,create an empty,Functional Requirement
+Duplicate artifacts,I can duplicate an artifact.,Functional Requirement
+Display tree of artifacts,view tree graph,Functional Requirement
+Display job progress,current progress job,Functional Requirement
+Cancel jobs in progress,cancel job that is progress,Functional Requirement
+Restore last view,last view was loading,Functional Requirement
+Filter artifact table by delta type,delta view filter table delta type,Functional Requirement
+Display artifact table delta,delta state table view,Functional Requirement
+Display artifact’s views,when viewing an navigate views that it is visible,Functional Requirement
+Load default project version,set default version view that is loaded when log,Functional Requirement
+Delete views,I can delete a view.,Functional Requirement
+Delete uploaded trace files,delete set trace links,Functional Requirement
+Preview uploaded trace links,preview list trace links loaded file,Functional Requirement
+Preview uploaded artifacts,preview list loaded file,Functional Requirement
+Send account confirmation email,when create an account will receive an email confirm account,Functional Requirement
+Display safety case artifact shapes,proper shapes safety case nodes,Functional Requirement
+Display FTA node shapes,proper shapes fta nodes,Functional Requirement
+Create safety case artifacts,when viewing safety case view create safety case,Functional Requirement
+Set safety case type,when creating safety case set safety case type,Functional Requirement
+Create FTA artifacts,when viewing an fta view create fta type,Functional Requirement
+Display artifact’s delta,select an difference versions,Functional Requirement
+Display subtree delta types,delta states all hidden child parent,Functional Requirement
+Display artifact delta colors,each delta state its color,Functional Requirement
+Display trace link delta colors,corresponding colors each trace delta state,Functional Requirement
+Display all delta artifacts,all added modified removed,Functional Requirement
+Enable delta view,enable delta view selecting version compare,Functional Requirement
+Disable delta view,I can disable delta view.,Functional Requirement
+Create views from artifacts,create new document or their types,Functional Requirement
+Edit views,edit name,Functional Requirement
+Display filtered artifact views,only links that are associated current view,Functional Requirement
+Update project on view data change,will be updated when someone else edits view,Functional Requirement
+Switch views,switch views,Functional Requirement
+Edit artifact type icons,change icon an type,Functional Requirement
+Delete type direction rules,remove rule what types trace link is allowed,Functional Requirement
+Display artifact subtree warnings,any errors parent node hidden child nodes,Functional Requirement
+Hide artifact subtrees,hide an subtree,Functional Requirement
+Display artifact subtrees,show an subtree,Functional Requirement
+Highlight artifact subtrees,highlight an subtree,Functional Requirement
+Create trace links,create new trace link,Functional Requirement
+Create artifacts,create new,Functional Requirement
+Re-center graph window,recenter graph window,Functional Requirement
+Filter displayed artifacts,filter what are displayed their attributes,Functional Requirement
+Delete artifacts,I can delete an artifact.,Functional Requirement
+Display parent and child artifacts,an parent child,Functional Requirement
+Edit artifacts,I can edit an artifact.,Functional Requirement
+Display artifact content,an type name body,Functional Requirement
+Select artifacts,select an view more details,Functional Requirement
+Decline generated links,decline an unreviewed or approved trace link,Functional Requirement
+Approve generated links,approve an unreviewed or declined trace link,Functional Requirement
+Search projects,search projects name,Functional Requirement
+Select projects,select its versions,Functional Requirement
+Display project TIM preview ,view preview tim graph being created,Functional Requirement
+Create trace matricies,create set trace links type they join,Functional Requirement
+Generate trace links on upload,generate trace links,Functional Requirement
+Upload trace matrix files,upload sets trace links two types,Functional Requirement
+Upload artifact type files,upload file containing want create,Functional Requirement
+Create artifact types,create sets their type,Functional Requirement
+Reset my password,I can reset my password.,Functional Requirement
+Send password reset email,request password reset email,Functional Requirement
+Create an account,create an account an unused email,Functional Requirement

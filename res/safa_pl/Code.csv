@@ -1,0 +1,4848 @@
+id,content,layer_id,summary,chunks
+components/project/editor/ProjectOverviewDisplay.vue,"<template>
+  <panel-card :title=""props.hideTitle ? undefined : 'Project Summary'"">
+    <div class=""overflow-auto"" :style=""hideOverflow ? 'max-height: 40vh' : ''"">
+      <typography
+        v-if=""!!specification && displayDescription""
+        variant=""caption""
+        value=""Description""
+      />
+      <typography
+        v-if=""displayDescription""
+        ep=""p""
+        variant=""expandable""
+        :value=""description""
+        default-expanded
+        :collapse-length=""0""
+        copyable
+      />
+      <typography
+        v-if=""!!specification && displayDescription""
+        variant=""caption""
+        value=""Specification""
+      />
+      <typography
+        v-if=""!!specification""
+        ep=""p""
+        variant=""expandable""
+        :value=""specification""
+        default-expanded
+        :collapse-length=""0""
+        copyable
+      />
+    </div>
+    <!--    <text-input-->
+    <!--      v-else-->
+    <!--      v-model=""editedIdentifier.specification""-->
+    <!--      disabled-->
+    <!--      type=""textarea""-->
+    <!--      :rows=""4""-->
+    <!--      label=""Specification""-->
+    <!--    />-->
+  </panel-card>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the project description.
+ */
+export default {
+  name: ""ProjectOverviewDisplay"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { projectStore } from ""@/hooks"";
+import { PanelCard, Typography } from ""@/components/common"";
+
+const props = defineProps<{ hideTitle?: boolean; hideOverflow?: boolean }>();
+
+// const editMode = computed(() => appStore.popups.editProject);
+// const editedIdentifier = computed(() => identifierSaveStore.editedIdentifier);
+
+// Hide the description if it is just a copy of the generated specification.
+const displayDescription = computed(
+  () =>
+    projectStore.project.description.length !==
+    projectStore.project.specification?.length
+);
+
+const description = computed(
+  () => projectStore.project.description || ""No Description.""
+);
+
+const specification = computed(() => projectStore.project.specification);
+</script>
+",Code,"This Vue.js component provides users with a concise and informative way to view the details of a project. By displaying the project description and specification in an expandable format, users can easily access and review the key information about the project without being overwhelmed by excessive details. The component's flexibility, allowing users to hide the title or limit the height of the content, ensures that the project summary can be tailored to the user's needs and preferences.
+
+The component's use of computed properties to determine whether to display the description based on its uniqueness from the specification demonstrates a thoughtful approach to providing users with only the most relevant information. This attention to detail and user experience is further reflected in the component's use of the `Typography` component, which enhances the readability and accessibility of the content.
+
+Overall, this component serves as a valuable tool for users to quickly and easily understand the key details of a project, empowering them to make informed decisions and stay up-to-date on the project's progress.",
+components/artifact/table/ArtifactTable.vue,"<template>
+  <panel-card>
+    <groupable-table
+      v-model:group-by=""groupBy""
+      v-model:expanded=""expanded""
+      expandable
+      :columns=""columns""
+      :rows=""rows""
+      row-key=""id""
+      default-sort-by=""name""
+      :default-group-by=""groupBy""
+      :loading=""loading""
+      :filter-row=""filterRow""
+      :custom-cells=""customCells""
+      data-cy=""view-artifact-table""
+      @row-click=""handleView""
+      @group:open=""handleOpenGroup""
+      @group:close=""handleCloseGroup""
+    >
+      <template #header-right>
+        <multiselect-input
+          v-model=""visibleTypes""
+          outlined
+          dense
+          clearable
+          :use-chips=""false""
+          :options=""typeOptions""
+          label=""Visible Types""
+          b=""""
+          class=""q-mr-sm table-input""
+          data-cy=""input-trace-table-types""
+        />
+        <select-input
+          v-model=""countType""
+          outlined
+          dense
+          :options=""countOptions""
+          option-to-value
+          option-label=""name""
+          option-value=""id""
+          label=""Visible Artifacts""
+          b=""""
+          class=""q-mr-sm table-input""
+          data-cy=""input-trace-table-count""
+        />
+        <multiselect-input
+          v-if=""inDeltaView""
+          v-model=""deltaTypes""
+          outlined
+          dense
+          :use-chips=""false""
+          :options=""deltaOptions""
+          label=""Delta Types""
+          option-to-value
+          option-value=""id""
+          option-label=""name""
+          class=""table-input""
+          data-cy=""input-delta-type""
+          b=""""
+        />
+      </template>
+
+      <template #body-expanded=""{ row }"">
+        <artifact-content-display :artifact=""row"" />
+      </template>
+
+      <template #body-cell-name=""{ row }"">
+        <artifact-name-display :artifact=""row"" display-tooltip />
+      </template>
+
+      <template #body-cell-type=""{ row }: { row: FlatArtifact }"">
+        <attribute-chip :value=""row.type"" artifact-type />
+      </template>
+
+      <template #body-cell-deltaType=""{ row }"">
+        <attribute-chip :value=""getDeltaType(row)"" delta-type />
+      </template>
+
+      <template #body-cell-actions=""{ row }"">
+        <div @click.stop>
+          <artifact-table-row-actions :artifact=""row"" />
+        </div>
+      </template>
+    </groupable-table>
+  </panel-card>
+</template>
+
+<script lang=""ts"">
+/**
+ Represents a table of artifacts.
+ */
+export default {
+  name: ""ArtifactTable"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, ref } from ""vue"";
+import {
+  ArtifactDeltaState,
+  FlatArtifact,
+  TableGroupRow,
+  TraceCountTypes,
+} from ""@/types"";
+import {
+  deltaTypeOptions,
+  artifactAttributesColumns,
+  artifactColumns,
+  artifactDeltaColumn,
+  actionsColumn,
+  traceCountOptions,
+} from ""@/util"";
+import {
+  appStore,
+  artifactStore,
+  attributesStore,
+  deltaStore,
+  selectionStore,
+  subtreeStore,
+  timStore,
+} from ""@/hooks"";
+import {
+  PanelCard,
+  GroupableTable,
+  AttributeChip,
+  MultiselectInput,
+  SelectInput,
+} from ""@/components/common"";
+import {
+  ArtifactContentDisplay,
+  ArtifactNameDisplay,
+} from ""@/components/artifact/display"";
+import ArtifactTableRowActions from ""./ArtifactTableRowActions.vue"";
+
+const customCells: (keyof FlatArtifact | string)[] = [
+  ""name"",
+  ""type"",
+  ""deltaType"",
+  ""actions"",
+];
+
+const deltaOptions = deltaTypeOptions();
+const countOptions = traceCountOptions();
+
+const groupBy = ref<string | undefined>(""type"");
+const visibleTypes = ref<string[] | null>([]);
+const countType = ref<TraceCountTypes>(""all"");
+const deltaTypes = ref<ArtifactDeltaState[] | null>([]);
+
+const loading = computed(() => appStore.isLoading > 0);
+const inDeltaView = computed(() => deltaStore.inDeltaView);
+const typeOptions = computed(() => timStore.typeNames);
+
+const expanded = ref<string[]>([]);
+
+const columns = computed(() => [
+  ...artifactColumns,
+  ...(inDeltaView.value ? [artifactDeltaColumn] : []),
+  ...artifactAttributesColumns(attributesStore.attributes),
+  actionsColumn,
+]);
+
+const rows = computed(() => artifactStore.flatArtifacts);
+
+/**
+ * Filters out rows that don't match the selected delta types.
+ * @param row - The artifact to filter.
+ * @return Whether to keep the row.
+ */
+function filterRow(row: FlatArtifact): boolean {
+  const subtree = subtreeStore.getSubtreeItem(row.id);
+  const visible = visibleTypes.value || [];
+  const delta = deltaTypes.value || [];
+
+  return (
+    ((visible.length || 0) === 0 || visible.includes(row.type)) &&
+    (!inDeltaView.value ||
+      delta.length === 0 ||
+      delta.includes(getDeltaType(row))) &&
+    (countType.value === ""all"" ||
+      (countType.value === ""onlyTraced"" && subtree.neighbors.length > 0) ||
+      (countType.value === ""notTraced"" && subtree.neighbors.length === 0))
+  );
+}
+
+/**
+ * Returns the delta type for a row.
+ * @param row - The artifact to check.
+ * @return The type of change delta loaded for this artifact.
+ */
+function getDeltaType(row: FlatArtifact): ArtifactDeltaState {
+  return deltaStore.getArtifactDeltaType(row.id);
+}
+
+/**
+ * Opens the view artifact side panel.
+ * @param row - The artifact to view.
+ */
+function handleView(row: TableGroupRow | FlatArtifact) {
+  if (""id"" in row) {
+    selectionStore.toggleSelectArtifact(String(row.id));
+  }
+}
+
+/**
+ * Expands all panels in the group.
+ * @param groupBy - The grouped field.
+ * @param groupValue - The grouped value.
+ */
+function handleOpenGroup(groupBy: keyof FlatArtifact, groupValue: unknown) {
+  expanded.value = rows.value
+    .filter((row) => row[groupBy] === groupValue)
+    .map((row) => row.id);
+}
+
+/**
+ * Collapses all panels in the group.
+ * @param groupBy - The grouped field.
+ * @param groupValue - The grouped value.
+ */
+function handleCloseGroup(groupBy: keyof FlatArtifact, groupValue: unknown) {
+  expanded.value = rows.value
+    .filter(
+      (row) => expanded.value.includes(row.id) && row[groupBy] !== groupValue
+    )
+    .map((row) => row.id);
+}
+</script>
+",Code,"This code provides users with a comprehensive interface for viewing and interacting with a table of artifacts. The table is highly customizable, allowing users to group the artifacts by various attributes, filter the visible artifacts based on selected types and delta types, and sort the table by default or custom criteria. Users can also expand individual rows to view more detailed information about each artifact, including its content and attributes, and perform various actions on the artifacts, such as viewing or modifying them.
+
+The table's flexibility and customization options enable users to organize, filter, and explore the artifact data in a way that suits their specific needs and preferences. By offering these features, the code empowers users to efficiently navigate and interact with the artifact collection, facilitating their ability to understand and work with the data effectively.",
+components/project/editor/SaveProjectModal.vue,"<template>
+  <modal
+    size=""md""
+    :loading=""projectApiStore.saveProjectLoading""
+    :open=""open""
+    :title=""modalTitle""
+    data-cy=""modal-project-edit""
+    @close=""handleClose""
+  >
+    <save-project-inputs @save=""handleClose"" />
+  </modal>
+</template>
+
+<script lang=""ts"">
+/**
+ * A modal for creating or editing a project.
+ */
+export default {
+  name: ""SaveProjectModal"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { projectApiStore, identifierSaveStore, appStore } from ""@/hooks"";
+import { Modal } from ""@/components/common"";
+import SaveProjectInputs from ""./SaveProjectInputs.vue"";
+
+const open = computed(() => appStore.popups.saveProject);
+const isUpdate = computed(() => identifierSaveStore.isUpdate);
+const modalTitle = computed(() =>
+  isUpdate.value ? ""Edit Project"" : ""Create Project""
+);
+
+/**
+ * Closes the save project panel.
+ */
+function handleClose(): void {
+  appStore.close(""saveProject"");
+}
+</script>
+",Code,"This code provides users with the ability to create or edit a project through a modal window. The modal window is displayed when the `saveProject` popup is open, and its title changes based on whether the user is creating a new project or editing an existing one. The modal window contains a `SaveProjectInputs` component, which likely provides the user interface for entering project details.
+
+When the user wants to close the modal window, the `handleClose` function is called, which sets the `saveProject` popup to false, effectively closing the modal. The code also references a `projectApiStore` and an `identifierSaveStore`, which are likely used to handle the backend logic for saving or updating a project. A loading indicator is displayed while the project is being saved or updated, as indicated by the `projectApiStore.saveProjectLoading` property.",
+components/artifact/display/ArtifactTraces.vue,"<template>
+  <div>
+    <panel-card :title=""parentTitle"" collapsable>
+      <template #title-actions>
+        <text-button
+          v-if=""displayActions""
+          text
+          label=""Link Parent""
+          icon=""add""
+          data-cy=""button-artifact-link-parent""
+          @click=""handleLinkParent""
+        />
+      </template>
+
+      <artifact-list-display
+        v-if=""parents.length > 0""
+        data-cy=""list-selected-parents""
+        :artifacts=""parents""
+        :action-cols=""1""
+        item-data-cy=""list-selected-parent-item""
+        @click=""handleArtifactClick($event.name)""
+      >
+        <template #actions=""{ artifact: parent }"">
+          <icon-button
+            outline
+            :flat=""false""
+            icon=""trace""
+            tooltip=""View Trace Link""
+            data-cy=""button-selected-parent-link""
+            :class=""getTraceLinkClassName(parent.name)""
+            @click=""handleTraceLinkClick(parent.name)""
+          />
+        </template>
+      </artifact-list-display>
+      <typography
+        v-else
+        l=""1""
+        variant=""caption""
+        value=""There are no parent artifacts.""
+      />
+    </panel-card>
+
+    <panel-card :title=""childTitle"" collapsable>
+      <template #title-actions>
+        <text-button
+          v-if=""displayActions""
+          text
+          label=""Link Child""
+          icon=""add""
+          data-cy=""button-artifact-link-child""
+          @click=""handleLinkChild""
+        />
+      </template>
+
+      <artifact-list-display
+        v-if=""children.length > 0""
+        data-cy=""list-selected-children""
+        :artifacts=""children""
+        :action-cols=""1""
+        item-data-cy=""list-selected-child-item""
+        @click=""handleArtifactClick($event.name)""
+      >
+        <template #actions=""{ artifact: child }"">
+          <icon-button
+            outline
+            :flat=""false""
+            icon=""trace""
+            tooltip=""View Trace Link""
+            data-cy=""button-selected-child-link""
+            :class=""getTraceLinkClassName(child.name)""
+            @click=""handleTraceLinkClick(child.name)""
+          />
+        </template>
+      </artifact-list-display>
+      <typography
+        v-else
+        l=""1""
+        variant=""caption""
+        value=""There are no child artifacts.""
+      />
+    </panel-card>
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the selected node's parents and children.
+ */
+export default {
+  name: ""ArtifactTraces"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { ArtifactSchema } from ""@/types"";
+import {
+  artifactStore,
+  permissionStore,
+  selectionStore,
+  subtreeStore,
+  traceSaveStore,
+  traceStore,
+} from ""@/hooks"";
+import {
+  Typography,
+  IconButton,
+  PanelCard,
+  TextButton,
+} from ""@/components/common"";
+import ArtifactListDisplay from ""./ArtifactListDisplay.vue"";
+
+const displayActions = computed(() =>
+  permissionStore.isAllowed(""project.edit_data"")
+);
+
+const artifact = computed(() => selectionStore.selectedArtifact);
+
+const parents = computed(() =>
+  artifact.value
+    ? (subtreeStore
+        .getParents(artifact.value.id)
+        .map((id) => artifactStore.getArtifactById(id))
+        .filter((artifact) => !!artifact) as ArtifactSchema[])
+    : []
+);
+
+const children = computed(() =>
+  artifact.value
+    ? (subtreeStore
+        .getChildren(artifact.value.id)
+        .map((id) => artifactStore.getArtifactById(id))
+        .filter((artifact) => !!artifact) as ArtifactSchema[])
+    : []
+);
+
+const parentTitle = computed(() =>
+  parents.value.length === 1
+    ? ""1 Parent Artifact""
+    : `${parents.value.length} Parent Artifacts`
+);
+
+const childTitle = computed(() =>
+  children.value.length === 1
+    ? ""1 Child Artifact""
+    : `${children.value.length} Child Artifacts`
+);
+
+/**
+ * Determines the className of the link to another artifact.
+ * @param artifactName - The artifact to select the link to.
+ * @returns The className for the link.
+ */
+function getTraceLinkClassName(artifactName: string): string {
+  const relatedArtifact = artifactStore.getArtifactByName(artifactName);
+
+  if (!relatedArtifact || !artifact.value) return ""trace-chip text-nodeDefault"";
+
+  const traceLink = traceStore.getTraceLinkByArtifacts(
+    relatedArtifact.id,
+    artifact.value.id,
+    true
+  );
+
+  const base =
+    traceLink?.traceType === ""GENERATED""
+      ? ""trace-chip-generated text-nodeGenerated ""
+      : ""trace-chip text-nodeDefault "";
+  const unreviewed =
+    traceLink?.approvalStatus === ""UNREVIEWED"" ? ""trace-chip-unreviewed"" : """";
+
+  return base + unreviewed;
+}
+
+/**
+ * Selects an artifact.
+ * @param artifactName - The artifact to select.
+ */
+function handleArtifactClick(artifactName: string): void {
+  const relatedArtifact = artifactStore.getArtifactByName(artifactName);
+
+  if (!relatedArtifact) return;
+
+  selectionStore.selectArtifact(relatedArtifact.id);
+}
+
+/**
+ * Selects the trace link to an artifact.
+ * @param artifactName - The artifact to select the link to.
+ */
+function handleTraceLinkClick(artifactName: string): void {
+  const relatedArtifact = artifactStore.getArtifactByName(artifactName);
+
+  if (!relatedArtifact || !artifact.value) return;
+
+  const traceLink = traceStore.getTraceLinkByArtifacts(
+    relatedArtifact.id,
+    artifact.value.id,
+    true
+  );
+
+  if (!traceLink) return;
+
+  selectionStore.selectTraceLink(traceLink);
+}
+
+/**
+ * Opens the create trace link panel with this artifact as the child.
+ */
+function handleLinkParent(): void {
+  if (!artifact.value) return;
+
+  traceSaveStore.openPanel({
+    type: ""source"",
+    artifactId: artifact.value.id,
+  });
+}
+
+/**
+ * Opens the create trace link panel with this artifact as the parent.
+ */
+function handleLinkChild(): void {
+  if (!artifact.value) return;
+
+  traceSaveStore.openPanel({
+    type: ""target"",
+    artifactId: artifact.value.id,
+  });
+}
+</script>
+",Code,"This code provides users with the ability to view and interact with the parent and child artifacts of a selected artifact. The user can see a list of the parent and child artifacts, with the option to click on an artifact to select it as the new focus. Additionally, the user can create a new trace link between the selected artifact and a parent or child artifact by clicking the ""Link Parent"" or ""Link Child"" button, respectively. The code dynamically styles the trace link buttons based on the type and approval status of the trace link, providing visual cues to the user. If there are no parent or child artifacts, the code displays a message indicating this. Overall, this functionality allows users to easily navigate and manage the relationships between artifacts within the system.",
+components/project/editor/ProjectButtons.vue,"<template>
+  <flex-box wrap t=""2"" class=""settings-buttons"">
+    <q-btn-group flat>
+      <text-button
+        text
+        label=""Download""
+        icon=""download""
+        data-cy=""button-settings-download""
+        @click=""handleDownload""
+      />
+      <q-btn-dropdown auto-close dense>
+        <text-button text label=""CSV"" @click=""handleDownload"" />
+        <text-button text label=""JSON"" @click=""handleDownload('json')"" />
+      </q-btn-dropdown>
+    </q-btn-group>
+    <separator v-if=""displayEditing"" vertical />
+    <text-button
+      v-if=""displayEditing""
+      text
+      label=""Edit""
+      icon=""edit""
+      data-cy=""button-settings-edit""
+      @click=""handleEdit""
+    />
+    <separator v-if=""displayDeleting"" vertical />
+    <text-button
+      v-if=""displayDeleting""
+      text
+      label=""Delete""
+      icon=""delete""
+      data-cy=""button-settings-delete""
+      @click=""handleDelete""
+    />
+  </flex-box>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays buttons for interacting with projects.
+ */
+export default {
+  name: ""ProjectButtons"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import {
+  identifierSaveStore,
+  permissionStore,
+  projectApiStore,
+  projectStore,
+} from ""@/hooks"";
+import { FlexBox, TextButton, Separator } from ""@/components/common"";
+
+const displayEditing = computed(() =>
+  permissionStore.isAllowed(""project.edit"")
+);
+const displayDeleting = computed(() =>
+  permissionStore.isAllowed(""project.delete"")
+);
+
+/**
+ * Opens the edit modal.
+ */
+function handleEdit(): void {
+  identifierSaveStore.selectIdentifier(projectStore.project, ""edit"");
+}
+
+/**
+ * Opens the edit modal.
+ */
+function handleDelete(): void {
+  identifierSaveStore.selectIdentifier(projectStore.project, ""delete"");
+}
+
+/**
+ * Downloads project files
+ */
+function handleDownload(fileType: ""csv"" | ""json"" = ""csv""): void {
+  projectApiStore.handleDownload(fileType);
+}
+</script>
+",Code,"This code provides a user interface for managing projects, allowing users to perform various actions such as downloading project files, editing project details, and deleting projects. The interface consists of a set of buttons that are displayed based on the user's permissions, ensuring that only authorized actions are available.
+
+The ""Download"" button allows users to download project files in either CSV or JSON format, with the code handling the file generation and download process. The ""Edit"" button, which is only visible to users with the necessary permissions, opens an edit modal where users can modify project details. Similarly, the ""Delete"" button, which is also permission-controlled, initiates the project deletion process.
+
+The code utilizes a range of custom components and stores to create the user interface and handle the underlying project management functionality. By providing these features, the code empowers users to effectively manage and interact with projects within the software system.",
+components/project/selector/table/VersionSelectorTable.vue,"<template>
+  <selector-table
+    v-model:selected=""selectedItems""
+    :minimal=""props.minimal""
+    :addable=""addable""
+    :deletable=""deletable""
+    :loading=""getVersionApiStore.getLoading""
+    :columns=""columns""
+    :rows=""rows""
+    row-key=""projectId""
+    item-name=""version""
+    :icons=""{ add: 'version-add', edit: 'edit', delete: 'version-delete' }""
+    data-cy=""table-version""
+    @refresh=""handleReload""
+    @row:add=""addOpen = true""
+    @row:delete=""handleDelete""
+  >
+    <template #bottom>
+      <create-version-modal
+        :open=""addOpen""
+        :project=""props.project""
+        @close=""addOpen = false""
+        @create=""handleAdd""
+      />
+    </template>
+  </selector-table>
+</template>
+
+<script lang=""ts"">
+/**
+ * A table for selecting project versions.
+ */
+export default {
+  name: ""VersionSelectorTable"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, onMounted, ref, watch } from ""vue"";
+import { VersionSchema, VersionSelectorTableProps } from ""@/types"";
+import { actionsColumn, versionColumns } from ""@/util"";
+import {
+  projectApiStore,
+  getVersionApiStore,
+  projectStore,
+  permissionStore,
+} from ""@/hooks"";
+import { SelectorTable } from ""@/components/common"";
+import { CreateVersionModal } from ""@/components/project/creator"";
+
+const props = defineProps<VersionSelectorTableProps>();
+
+const emit = defineEmits<{
+  /**
+   * Emitted when the selected version changes.
+   */
+  (e: ""selected"", version: VersionSchema | undefined): void;
+}>();
+
+const selected = ref<VersionSchema | undefined>();
+const addOpen = ref(false);
+const versions = ref<VersionSchema[]>([]);
+
+const selectedItems = computed({
+  get() {
+    return selected.value ? [selected.value] : [];
+  },
+  set(items: VersionSchema[]) {
+    selected.value = items[0];
+    emit(""selected"", items[0]);
+  },
+});
+
+const columns = computed(() =>
+  props.minimal ? versionColumns : [...versionColumns, actionsColumn]
+);
+
+const rows = computed(() =>
+  props.hideCurrentVersion
+    ? versions.value.filter(
+        ({ versionId }) => versionId !== projectStore.versionId
+      )
+    : versions.value
+);
+
+const addable = computed(() =>
+  permissionStore.isAllowed(""project.edit_versions"", props.project)
+);
+const deletable = computed(() => addable.value && versions.value.length > 1);
+
+/**
+ * Loads project versions.
+ */
+function handleReload() {
+  getVersionApiStore.handleReload(props.project.projectId, {
+    onSuccess: (loadedVersions) => {
+      versions.value = loadedVersions;
+
+      if (loadedVersions.length === 1 && props.minimal) {
+        emit(""selected"", loadedVersions[0]);
+      }
+    },
+  });
+}
+
+/**
+ * Closes the add version modal and adds the created version.
+ */
+function handleAdd(version: VersionSchema) {
+  versions.value = [version, ...versions.value];
+  addOpen.value = false;
+}
+
+/**
+ * Attempts to delete the version.
+ * @param version - The version to delete.
+ */
+function handleDelete(version: VersionSchema) {
+  projectApiStore.handleDeleteVersion(version, {
+    onSuccess: () => {
+      versions.value = versions.value.filter(
+        ({ versionId }) => versionId != version.versionId
+      );
+    },
+  });
+}
+
+onMounted(() => handleReload());
+
+watch(
+  () => props.project,
+  () => handleReload()
+);
+
+watch(
+  () => props.open,
+  () => handleReload()
+);
+</script>
+",Code,"This code provides a user interface for managing project versions, allowing users to view, select, add, and delete versions of a project. The main component is a table that displays the available versions, with the ability to toggle between a minimal and full mode to show or hide additional details and actions.
+
+Users can select a version from the table, which will notify the parent component of the selected version. The table also supports refreshing the list of versions, as well as adding a new version through a modal dialog. The table's behavior is controlled by various computed properties, such as the list of columns to display and the permissions to add, delete, or edit versions, which are based on the provided project object and permission store.
+
+The code utilizes several API stores to handle the loading, creating, and deleting of versions, ensuring that the table's functionality is seamlessly integrated with the underlying data management system. This allows users to efficiently manage the versions of their projects, making it easier to track changes, collaborate, and ensure the integrity of their project data.",
+components/project/save/ProjectFilesUploader.vue,"<template>
+  <div>
+    <project-identifier-input
+      v-model:name=""identifier.name""
+      v-model:description=""identifier.description""
+      :is-update=""isUpdate""
+      :data-cy-name=""props.dataCyName""
+      :data-cy-description=""props.dataCyDescription""
+    />
+    <div class=""q-mx-auto long-input"">
+      <project-files-input
+        v-if=""!emptyFiles""
+        v-model=""selectedFiles""
+        data-cy=""input-files-bulk""
+      />
+      <switch-input
+        v-model=""emptyFiles""
+        label=""Create an empty project""
+        data-cy=""toggle-create-empty-project""
+      />
+      <br />
+      <switch-input
+        v-model=""summarize""
+        label=""Generate artifact summaries""
+        data-cy=""toggle-create-summarize""
+      />
+      <text-button
+        block
+        label=""Create Project From Files""
+        color=""primary""
+        :disabled=""disabled""
+        :loading=""createProjectApiStore.loading""
+        class=""q-mt-md""
+        data-cy=""button-create-project""
+        @click=""handleCreate""
+      />
+    </div>
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * Creates projects with bulk uploaded files.
+ */
+export default {
+  name: ""ProjectFilesUploader"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, ref, withDefaults } from ""vue"";
+import { ProjectIdentifierProps } from ""@/types"";
+import { createProjectApiStore, identifierSaveStore } from ""@/hooks"";
+import { SwitchInput, TextButton } from ""@/components/common"";
+import ProjectFilesInput from ""./ProjectFilesInput.vue"";
+import ProjectIdentifierInput from ""./ProjectIdentifierInput.vue"";
+
+const props = withDefaults(
+  defineProps<
+    Pick<ProjectIdentifierProps, ""dataCyName"" | ""dataCyDescription"">
+  >(),
+  {
+    dataCyName: ""input-project-name"",
+    dataCyDescription: ""input-project-description"",
+  }
+);
+
+const emit = defineEmits<{
+  (e: ""submit""): void;
+}>();
+
+const selectedFiles = ref<File[]>([]);
+const emptyFiles = ref(false);
+const summarize = ref(false);
+
+const identifier = computed(() => identifierSaveStore.editedIdentifier);
+const isUpdate = computed(() => identifierSaveStore.isUpdate);
+
+const disabled = computed(() => {
+  const isNameInvalid = identifier.value.name.length === 0;
+
+  if (emptyFiles.value) {
+    return isNameInvalid;
+  } else {
+    return (
+      isNameInvalid ||
+      (selectedFiles.value.length === 0 && !emptyFiles.value) ||
+      !selectedFiles.value.find(({ name }) => name === ""tim.json"")
+    );
+  }
+});
+
+/**
+ * Attempts to save the project.
+ */
+async function handleCreate() {
+  await createProjectApiStore.handleBulkImport(
+    identifier.value,
+    selectedFiles.value,
+    summarize.value,
+    {
+      onSuccess: () => {
+        selectedFiles.value = [];
+        identifierSaveStore.resetIdentifier(true);
+        emit(""submit"");
+      },
+    }
+  );
+}
+</script>
+",Code,"This code provides a user interface for creating a new project by uploading a set of files. The user can specify a name and description for the project, and choose whether to upload files or create an empty project. If files are uploaded, the code ensures that at least one file with the name ""tim.json"" is included. The user can also opt to generate artifact summaries for the project.
+
+Once the user has provided the necessary information, they can click a button to initiate the project creation process. The code disables the button if any required information is missing, such as an empty project name or no files selected when the ""Create an empty project"" option is not enabled.
+
+When the user clicks the button, the code interacts with the application's API and data stores to save the project. If the project is created successfully, the code resets the selected files and the project identifier, and emits a ""submit"" event to notify any parent components.",
+components/project/creator/ProjectBuilder.vue,"<template>
+  <flex-box :column=""smallWindow"" justify=""center"">
+    <flex-item
+      :parts=""smallWindow ? '12' : '6'""
+      :class=""smallWindow ? 'full-width' : ''""
+    >
+      <panel-card class=""q-ma-sm"" title=""Project Configuration"">
+        <flex-box :column=""smallWindow"" full-width>
+          <tab-list v-model=""tab"" :tabs=""tabs"" :vertical=""!smallWindow"">
+            <template #name>
+              <project-identifier-input
+                v-model:name=""identifier.name""
+                v-model:description=""identifier.description""
+              />
+              <text-button
+                block
+                outlined
+                :disabled=""continueDisabled""
+                label=""Import Data""
+                color=""primary""
+                class=""q-mt-md""
+                icon=""upload""
+                data-cy=""button-continue-project""
+                @click=""tab = 'data'""
+              />
+            </template>
+            <template #data>
+              <upload-panel-list />
+              <text-button
+                :disabled=""uploadDisabled""
+                block
+                label=""Create Project""
+                color=""primary""
+                class=""q-mt-md""
+                icon=""project-add""
+                data-cy=""button-create-project""
+                @click=""handleCreate""
+              />
+            </template>
+          </tab-list>
+        </flex-box>
+      </panel-card>
+    </flex-item>
+    <flex-item :parts=""smallWindow ? '12' : '6'"" :class=""graphClassName"">
+      <panel-card>
+        <creator-tree />
+      </panel-card>
+    </flex-item>
+  </flex-box>
+</template>
+
+<script lang=""ts"">
+/**
+ * Builds project data uploads from all data sources.
+ */
+export default {
+  name: ""ProjectBuilder"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, onMounted, ref, watch } from ""vue"";
+import { useRoute } from ""vue-router"";
+import { CreatorSectionTab, CreatorTab, UploadPanelType } from ""@/types"";
+import { creatorTabOptions } from ""@/util"";
+import {
+  createProjectApiStore,
+  gitHubApiStore,
+  identifierSaveStore,
+  integrationsStore,
+  jiraApiStore,
+  projectSaveStore,
+  useScreen,
+} from ""@/hooks"";
+import { getParam, QueryParams, Routes } from ""@/router"";
+import {
+  FlexBox,
+  FlexItem,
+  PanelCard,
+  TextButton,
+  TabList,
+} from ""@/components/common"";
+import { CreatorTree } from ""@/components/graph"";
+import { ProjectIdentifierInput } from ""@/components/project/save"";
+import { UploadPanelList } from ""@/components/project/creator/upload"";
+
+const { smallWindow } = useScreen();
+const currentRoute = useRoute();
+
+const tabs = creatorTabOptions();
+const tab = ref<CreatorSectionTab>(""name"");
+
+const identifier = computed(() => identifierSaveStore.editedIdentifier);
+
+const uploadMode = computed(() => projectSaveStore.mode);
+
+const continueDisabled = computed(() => !identifierSaveStore.canSave);
+
+const uploadDisabled = computed(
+  () =>
+    !projectSaveStore.uploadPanels
+      .map(({ valid }) => valid)
+      .reduce((acc, cur) => acc && cur, true) ||
+    (!identifier.value.name && ![""github"", ""jira""].includes(uploadMode.value))
+);
+
+const displayGraph = computed(() => projectSaveStore.graphNodes.length > 0);
+
+const graphClassName = computed(() => {
+  const graphClass = displayGraph.value
+    ? ""artifact-view visible q-ma-sm ""
+    : ""artifact-view collapsed q-ma-sm "";
+  const screenClass = smallWindow.value ? ""full-width"" : """";
+
+  return graphClass + screenClass;
+});
+
+/**
+ * Clears all project data.
+ */
+function handleClear() {
+  identifierSaveStore.resetIdentifier(true);
+  projectSaveStore.resetProject();
+}
+
+/**
+ * Creates a new project.
+ */
+function handleCreate() {
+  const callbacks = { onSuccess: handleClear };
+
+  if (uploadMode.value === ""bulk"") {
+    createProjectApiStore.handleBulkImport(
+      identifier.value,
+      projectSaveStore.uploadPanels[0]?.bulkFiles || [],
+      projectSaveStore.uploadPanels[0]?.summarize || false,
+      callbacks
+    );
+  } else if (uploadMode.value === ""artifact"" || uploadMode.value === ""trace"") {
+    createProjectApiStore.handleImport(callbacks);
+  } else if (uploadMode.value === ""github"") {
+    createProjectApiStore.handleGitHubImport(callbacks);
+  } else if (uploadMode.value === ""jira"") {
+    createProjectApiStore.handleJiraImport(callbacks);
+  }
+}
+
+/**
+ * Reloads integrations data.
+ */
+function handleReloadIntegrations() {
+  if (integrationsStore.validJiraCredentials) {
+    jiraApiStore.handleLoadOrganizations();
+  }
+  if (integrationsStore.validGitHubCredentials) {
+    gitHubApiStore.handleLoadProjects();
+  }
+}
+
+/**
+ * Reads the URL query for which tab to open to.
+ */
+function handleLoadTab() {
+  const loadedToken = getParam(QueryParams.TAB);
+
+  if (!loadedToken) return;
+
+  const variant =
+    (
+      {
+        standard: ""artifact"",
+        bulk: ""bulk"",
+        import: ""github"",
+      } as Record<CreatorTab | string, UploadPanelType>
+    )[String(loadedToken)] || ""artifact"";
+
+  projectSaveStore.uploadPanels[0].variant = variant;
+
+  tab.value = variant === ""github"" ? ""data"" : ""name"";
+}
+
+onMounted(() => handleReloadIntegrations());
+
+watch(
+  () => [
+    integrationsStore.validJiraCredentials,
+    integrationsStore.validGitHubCredentials,
+  ],
+  () => handleReloadIntegrations()
+);
+
+watch(
+  () => currentRoute.path,
+  (path) => {
+    if (path !== Routes.PROJECT_CREATOR) return;
+
+    handleClear();
+    handleLoadTab();
+  }
+);
+
+onMounted(handleLoadTab);
+</script>
+",Code,"This code provides a user interface for creating and configuring a new project. The user can input a project name and description, and then choose to import data from various sources, such as a bulk upload, artifact upload, trace upload, GitHub, or Jira. The code handles the different types of data imports and provides a ""Create Project"" button that the user can click to initiate the project creation process.
+
+As the user configures the project, a visual representation of the project data is displayed in the ""Creator Tree"" section. The visibility of this section is controlled by a computed property that determines whether the project data has been loaded.
+
+The code also includes functionality to clear all project data, reload integration data (such as Jira and GitHub credentials), and handle loading the appropriate tab based on the URL query parameters. This allows the user to easily manage and configure their project, with the code providing a seamless and intuitive user experience.",
+components/project/editor/DeleteProjectModal.vue,"<template>
+  <modal
+    :loading=""projectApiStore.deleteProjectLoading""
+    :open=""open""
+    title=""Delete Project""
+    subtitle=""Are you sure you want to delete this project? Type in the project's name to confirm deletion.""
+    data-cy=""modal-project-delete""
+    @close=""handleClose""
+  >
+    <text-input
+      v-model=""confirmText""
+      :label=""label""
+      data-cy=""input-project-delete-name""
+    />
+    <template #actions>
+      <text-button
+        color=""negative""
+        label=""Delete""
+        :disabled=""!canDelete""
+        :loading=""projectApiStore.deleteProjectLoading""
+        data-cy=""button-project-delete""
+        @click=""handleConfirm""
+      />
+    </template>
+  </modal>
+</template>
+
+<script lang=""ts"">
+/**
+ * A modal for confirming project deletion.
+ */
+export default {
+  name: ""DeleteProjectModal"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { ref, computed } from ""vue"";
+import {
+  projectApiStore,
+  identifierSaveStore,
+  appStore,
+  getProjectApiStore,
+} from ""@/hooks"";
+import { Modal, TextInput, TextButton } from ""@/components/common"";
+
+const confirmText = ref("""");
+
+const open = computed(() => appStore.popups.deleteProject);
+const projectName = computed(
+  () => identifierSaveStore.baseIdentifier?.name || """"
+);
+const label = computed(() => `Type ""${projectName.value}""`);
+const canDelete = computed(() => confirmText.value === projectName.value);
+
+/**
+ * Clears the modal data and closes the modal.
+ */
+function handleClose(): void {
+  confirmText.value = """";
+  appStore.close(""deleteProject"");
+}
+
+/**
+ * Confirms the project deletion.
+ */
+function handleConfirm(): void {
+  projectApiStore.handleDeleteProject({
+    onSuccess: async () => {
+      handleClose();
+
+      await getProjectApiStore.handleReload();
+    },
+  });
+}
+</script>
+",Code,"This code provides users with the ability to delete a project from the application. The modal dialog presents the user with the project's name and requires them to confirm the deletion by typing in the project's name. Once the user types the correct name and clicks the ""Delete"" button, the code initiates the deletion process. During this time, the modal displays a loading state to indicate the deletion is in progress. After the project is successfully deleted, the code reloads the project data to reflect the change. Users can also close the modal without deleting the project by clicking outside the modal or using the close button. This functionality allows users to safely and confidently remove projects from the application when necessary.",
+components/project/save/ProjectFilesInput.vue,"<template>
+  <div>
+    <file-input
+      v-model=""selectedFiles""
+      multiple
+      :data-cy=""props.dataCy""
+      :error-message=""errorMessage""
+      @clear=""handleClear""
+    />
+    <expansion-item
+      v-if=""selectedFiles.length > 0""
+      class=""q-mb-md""
+      label=""Manage Project TIM""
+      data-cy=""toggle-tim-manage""
+    >
+      <multiselect-input
+        v-model=""artifactTypes""
+        label=""Artifact Files""
+        :options=""typeOptions""
+        hint=""Select the artifact files. Reads the file name <type>.csv""
+        data-cy=""input-tim-artifacts""
+        b=""1""
+      />
+      <multiselect-input
+        v-model=""traceMatrices""
+        label=""Trace Matrix Files""
+        :options=""matrixOptions""
+        hint=""Select the trace matrix files. Reads the file name <source>2<target>.csv""
+        data-cy=""input-tim-traces""
+        :option-label=""getMatrixName""
+        b=""1""
+      />
+    </expansion-item>
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * An input for project files.
+ */
+export default {
+  name: ""ProjectFilesInput"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { ref, computed, watch } from ""vue"";
+import { MatrixSchema, ProjectFilesInputProps, TimJsonSchema } from ""@/types"";
+import { useVModel } from ""@/hooks"";
+import {
+  FileInput,
+  MultiselectInput,
+  ExpansionItem,
+} from ""@/components/common"";
+
+const props = defineProps<ProjectFilesInputProps>();
+
+const emit = defineEmits<{
+  (e: ""update:modelValue"", files: File[]): void;
+  (e: ""update:tim"", tim: TimJsonSchema | undefined): void;
+}>();
+
+const selectedFiles = useVModel(props, ""modelValue"");
+const tim = ref<TimJsonSchema | undefined>(undefined);
+const artifactTypes = ref<string[]>([]);
+const traceMatrices = ref<MatrixSchema[]>([]);
+
+/**
+ * @return Generated artifact types based on file names.
+ */
+const typeOptions = computed(() =>
+  selectedFiles.value
+    .map(({ name }) => name.split(""."")[0])
+    .filter((name) => name !== ""tim"")
+);
+
+/**
+ * @return Generated trace matrices based on file names.
+ */
+const matrixOptions = computed(() =>
+  artifactTypes.value
+    .map((source) => artifactTypes.value.map((target) => ({ source, target })))
+    .reduce((acc, cur) => [...acc, ...cur], [])
+);
+
+/**
+ * @return Any errors on uploaded files.
+ */
+const errorMessage = computed(() =>
+  selectedFiles.value.length === 0 ||
+  selectedFiles.value.find(({ name }) => name === ""tim.json"")
+    ? undefined
+    : ""Missing project TIM. Please create one below.""
+);
+
+/**
+ * Returns the display name of a trace matrix.
+ * @param matrix - The matrix to name.
+ * @return The display name.
+ */
+function getMatrixName(matrix: MatrixSchema): string {
+  return `${matrix.source} to ${matrix.target}`;
+}
+
+/**
+ * Clears the current tim file data.
+ */
+function handleClear(): void {
+  tim.value = undefined;
+  selectedFiles.value = [];
+  artifactTypes.value = [];
+  traceMatrices.value = [];
+  emit(""update:tim"", undefined);
+}
+
+/**
+ * Creates a new tim file when the inputs change.
+ * Only creates a new file if there is no existing TIM file.
+ */
+function handleTimChange(): void {
+  if (
+    selectedFiles.value.length === 0 ||
+    selectedFiles.value.find(({ name }) => name == ""tim.json"")
+  )
+    return;
+
+  tim.value = {
+    artifacts: artifactTypes.value.map((type) => ({
+      type,
+      fileName: `${type}.csv`,
+    })),
+    traces: traceMatrices.value.map(({ source, target }) => ({
+      sourceType: source,
+      targetType: target,
+      fileName: `${source}2${target}.csv`,
+    })),
+  };
+
+  selectedFiles.value = [
+    ...selectedFiles.value.filter(({ name }) => name !== ""tim.json""),
+    new File([JSON.stringify(tim.value)], ""tim.json"", {
+      type: ""application/json"",
+    }),
+  ];
+
+  emit(""update:tim"", tim.value);
+}
+
+/**
+ * Selects relevant trace matrices when the types change, and updates the tim file.
+ */
+function handleTypesChange(): void {
+  traceMatrices.value = matrixOptions.value.filter(({ source, target }) =>
+    selectedFiles.value.find(({ name }) => name === `${source}2${target}.csv`)
+  );
+
+  handleTimChange();
+}
+
+/**
+ * If a tim file is loaded, it is parsed so that it can be edited.
+ */
+watch(
+  () => selectedFiles.value,
+  (files: File[]) => {
+    const timFile = files.find(({ name }) => name === ""tim.json"");
+
+    if (!timFile || artifactTypes.value.length > 0) return;
+
+    const reader = new FileReader();
+
+    reader.addEventListener(""load"", (event) => {
+      tim.value = JSON.parse(String(event.target?.result));
+
+      artifactTypes.value = (tim.value?.artifacts || []).map(
+        ({ fileName }) => fileName.split(""."")[0]
+      );
+
+      traceMatrices.value = (tim.value?.traces || [])
+        .filter(({ sourceType, targetType }) => sourceType && targetType)
+        .map(({ sourceType, targetType }) => ({
+          source: sourceType,
+          target: targetType,
+        }));
+
+      emit(""update:tim"", tim.value);
+    });
+
+    reader.readAsText(timFile);
+  }
+);
+
+watch(
+  () => artifactTypes.value,
+  () => handleTypesChange()
+);
+
+watch(
+  () => traceMatrices.value,
+  () => handleTimChange()
+);
+</script>
+",Code,"This code provides a user interface for managing a project's Traceability Information Model (TIM). Users can upload multiple files, including artifact files (CSV files with a specific naming convention) and trace matrix files (CSV files with a different naming convention). The code automatically generates the options for the artifact types and trace matrices based on the selected files, allowing users to easily select the relevant files.
+
+When the user selects the artifact types and trace matrices, the code automatically generates a TIM file (a JSON file named ""tim.json"") that contains the information about the artifacts and trace matrices. This TIM file is then added to the list of selected files, making it easy for the user to manage the project's traceability information. The user can also clear the current TIM file data, which will reset the selected files, artifact types, and trace matrices.
+
+The code includes error handling, displaying an error message if the user has not selected any files or if there is no TIM file present. The user interface is built using various Vue.js components, such as FileInput, MultiselectInput, and ExpansionItem, providing a seamless and intuitive experience for the user.",
+components/graph/artifact/ArtifactNodeActions.vue,"<template>
+  <node-display
+    v-if=""props.selected""
+    :color=""props.color""
+    variant=""sidebar""
+    :selected=""props.selected""
+    @mousedown.stop
+    @mouseup.stop
+  >
+    <flex-box column>
+      <icon-button
+        tooltip=""View related artifacts""
+        icon=""view-tree""
+        @click=""viewsStore.addDocumentOfNeighborhood(props.artifact)""
+      />
+      <icon-button
+        v-if=""showHiddenChildren && hasSubtree""
+        tooltip=""Show subtree""
+        icon=""group-open-all""
+        data-cy=""button-toggle-subtree""
+        @click=""viewsStore.extendDocumentSubtree(props.artifact)""
+      />
+      <icon-button
+        v-else-if=""hasSubtree""
+        tooltip=""Hide subtree""
+        icon=""group-close-all""
+        data-cy=""button-toggle-subtree""
+        @click=""subtreeStore.hideSubtree(id)""
+      />
+
+      <separator v-if=""displayActions"" class=""full-width q-my-xs"" />
+
+      <icon-button
+        v-if=""displayActions""
+        tooltip=""Add parent""
+        icon=""trace""
+        :rotate=""-90""
+        :color=""props.color""
+        @click=""
+          traceSaveStore.openPanel({
+            type: 'source',
+            artifactId: id,
+          })
+        ""
+      />
+      <icon-button
+        v-if=""displayActions""
+        tooltip=""Add child""
+        icon=""trace""
+        :rotate=""90""
+        :color=""props.color""
+        @click=""
+          traceSaveStore.openPanel({
+            type: 'target',
+            artifactId: id,
+          })
+        ""
+      />
+    </flex-box>
+  </node-display>
+</template>
+
+<script lang=""ts"">
+/**
+ * Renders actions for the selected artifact node.
+ */
+export default {
+  name: ""ArtifactNodeActions"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { ArtifactNodeDisplayProps } from ""@/types"";
+import {
+  subtreeStore,
+  permissionStore,
+  traceSaveStore,
+  viewsStore,
+} from ""@/hooks"";
+import { NodeDisplay } from ""@/components/graph/display"";
+import { FlexBox, Separator, IconButton } from ""@/components/common"";
+
+const props = defineProps<Omit<ArtifactNodeDisplayProps, ""deltaColor"">>();
+
+const displayActions = computed(() =>
+  permissionStore.isAllowed(""project.edit_data"")
+);
+
+const id = computed(() => props.artifact.id);
+
+const hasSubtree = computed(
+  () => subtreeStore.getChildren(id.value).length > 0
+);
+const showHiddenChildren = computed(() => props.hiddenChildren.length > 0);
+</script>
+",Code,"This code provides users with a set of interactive controls for managing the display and relationships of a selected artifact node within a larger software system. Users can view related artifacts, show or hide the node's subtree of child nodes, and create new parent or child relationships for the selected node. The availability of these actions is determined by the user's permissions and the presence of a subtree for the selected node. By offering these capabilities, the code empowers users to explore and manipulate the artifact graph, facilitating their understanding and management of the system's components and their interconnections.",
+components/artifact/display/ArtifactDocuments.vue,"<template>
+  <panel-card v-if=""doDisplay"" title=""Views"" collapsable>
+    <list>
+      <list-item
+        v-for=""doc in documents""
+        :key=""doc.documentId""
+        clickable
+        tooltip
+        :title=""doc.name""
+        @click=""handleSwitch(doc)""
+      />
+    </list>
+  </panel-card>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the selected node's documents.
+ */
+export default {
+  name: ""ArtifactDocuments"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { DocumentSchema } from ""@/types"";
+import { documentApiStore, documentStore, selectionStore } from ""@/hooks"";
+import { List, ListItem, PanelCard } from ""@/components/common"";
+
+const artifact = computed(() => selectionStore.selectedArtifact);
+
+const documents = computed(() =>
+  artifact.value
+    ? documentStore.projectDocuments.filter(
+        ({ documentId }) => artifact.value?.documentIds.includes(documentId)
+      )
+    : []
+);
+
+const doDisplay = computed(() => documents.value.length > 0);
+
+/**
+ * Switches to another document.
+ * @param document - The document to switch to.
+ */
+function handleSwitch(document: DocumentSchema): void {
+  documentApiStore.handleSwitch(document);
+}
+</script>
+",Code,"Users can view and interact with a list of documents associated with a selected artifact. The code displays a collapsible panel card titled ""Views"" that contains a list of clickable document items. Each document item displays the document's name and provides a tooltip. The list of documents is dynamically generated based on the selected artifact, and if no documents are associated with the artifact, the panel card will not be shown. When a user clicks on a document item, the code handles the switch to the selected document, likely by interacting with a document API store to update the currently displayed document.",
+components/project/selector/ProjectVersionStepper.vue,"<template>
+  <panel-card :color=""panelColor"" :title=""panelTitle"">
+    <stepper
+      v-model=""currentStep""
+      :steps=""steps""
+      :minimal=""props.minimal""
+      data-cy=""project-version-stepper""
+      @submit=""handleSubmit""
+    >
+      <template #1>
+        <project-selector-table
+          :minimal=""props.minimal""
+          :open=""isProjectStep""
+          @selected=""handleProjectSelect""
+        />
+      </template>
+      <template #2>
+        <version-selector-table
+          v-if=""selectedProject""
+          :minimal=""props.minimal""
+          :open=""isVersionStep""
+          :project=""selectedProject""
+          @selected=""handleVersionSelect""
+        />
+      </template>
+    </stepper>
+  </panel-card>
+</template>
+
+<script lang=""ts"">
+/**
+ * Presents a stepper in a modal for selecting a project and version.
+ */
+export default {
+  name: ""ProjectVersionStepper"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { ref, computed } from ""vue"";
+import {
+  StepperStep,
+  IdentifierSchema,
+  VersionSchema,
+  MinimalProps,
+} from ""@/types"";
+import { versionToString } from ""@/util"";
+import { getVersionApiStore, projectStore } from ""@/hooks"";
+import { Stepper, PanelCard } from ""@/components/common"";
+import { ProjectSelectorTable, VersionSelectorTable } from ""./table"";
+
+const props = defineProps<MinimalProps>();
+
+const defaultProjectStep = (): StepperStep => ({
+  title: ""Select a Project"",
+  done: false,
+});
+const defaultVersionStep = (): StepperStep => ({
+  title: ""Select a Version"",
+  done: false,
+});
+
+const currentStep = ref(1);
+const steps = ref([defaultProjectStep(), defaultVersionStep()]);
+const selectedProject = ref<IdentifierSchema>();
+const selectedVersion = ref<VersionSchema>();
+
+const panelTitle = computed(() => (props.minimal ? undefined : ""My Projects""));
+
+const isProjectStep = computed(() => currentStep.value === 1);
+const isVersionStep = computed(() => currentStep.value === 2);
+const panelColor = computed(() => (props.minimal ? ""transparent"" : undefined));
+
+/**
+ * Clears all modal data.
+ */
+function handleClear() {
+  const isProjectDefined = projectStore.isProjectDefined;
+
+  selectedProject.value = isProjectDefined ? projectStore.project : undefined;
+  selectedVersion.value = undefined;
+  currentStep.value = 1;
+
+  steps.value = [
+    isProjectDefined
+      ? {
+          title: projectStore.project.name,
+          done: true,
+        }
+      : defaultProjectStep(),
+    defaultVersionStep(),
+  ];
+}
+
+/**
+ * Selects a project.
+ * @param project - The project to select, or an empty selection.
+ */
+function handleProjectSelect(project: IdentifierSchema | undefined) {
+  selectedProject.value = project;
+
+  if (project) {
+    currentStep.value++;
+    steps.value[0] = {
+      title: project.name,
+      done: true,
+    };
+  } else {
+    steps.value = [defaultProjectStep(), defaultVersionStep()];
+  }
+
+  handleVersionSelect(undefined);
+}
+
+/**
+ * Selects a version.
+ * @param version - The version to select, or an empty selection.
+ */
+function handleVersionSelect(version: VersionSchema | undefined) {
+  selectedVersion.value = version;
+
+  if (version) {
+    steps.value[1] = {
+      title: versionToString(version),
+      done: true,
+    };
+
+    handleSubmit();
+  } else {
+    steps.value[1] = defaultVersionStep();
+  }
+}
+
+/**
+ * Loads the selected project.
+ */
+function handleSubmit(): void {
+  if (!selectedProject.value || !selectedVersion.value) return;
+
+  getVersionApiStore
+    .handleLoad(selectedVersion.value.versionId)
+    .then(() => handleClear());
+}
+</script>
+",Code,"This code provides a user interface for selecting a project and version from a set of available options. The interface is presented as a modal with a stepper, allowing the user to navigate through the selection process step-by-step. In the first step, the user can select a project from a table of available projects. Once a project is selected, the second step is presented, which displays a table of available versions for the selected project. The user can then choose a version from this table.
+
+The selected project and version are stored in the component's state, and when the user submits the form, the selected version is loaded using a function from the `getVersionApiStore`. The modal can be cleared, resetting the selected project and version, and the stepper steps are updated accordingly. The component also has some conditional rendering based on whether the modal is in a ""minimal"" mode or not, which affects the appearance of the panel and the title.
+
+Overall, this code provides a user-friendly interface for selecting a project and version, allowing the user to easily navigate the selection process and load the chosen version for further use.",
+components/project/creator/CreateVersionModal.vue,"<template>
+  <modal
+    :title=""`Current Version: ${versionName}`""
+    :open=""props.open""
+    :loading=""createVersionApiStore.loading""
+    data-cy=""modal-version-create""
+    @close=""emit('close')""
+  >
+    <flex-box column align=""center"">
+      <text-button
+        text
+        :label=""`New Major Version: ${nextVersion('major')}`""
+        color=""primary""
+        data-cy=""button-create-major-version""
+        @click=""() => handleClick('major')""
+      />
+      <text-button
+        text
+        :label=""`New Minor Version: ${nextVersion('minor')}`""
+        color=""primary""
+        data-cy=""button-create-minor-version""
+        @click=""() => handleClick('minor')""
+      />
+      <text-button
+        text
+        :label=""`New Revision: ${nextVersion('revision')}`""
+        color=""primary""
+        data-cy=""button-create-revision-version""
+        @click=""() => handleClick('revision')""
+      />
+    </flex-box>
+  </modal>
+</template>
+
+<script lang=""ts"">
+/**
+ * A modal for creating new versions.
+ */
+export default {
+  name: ""CreateVersionModal"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { CreateVersionModalProps, VersionSchema, VersionType } from ""@/types"";
+import { versionToString } from ""@/util"";
+import { createVersionApiStore, projectStore } from ""@/hooks"";
+import { Modal, TextButton, FlexBox } from ""@/components/common"";
+
+const props = defineProps<CreateVersionModalProps>();
+
+const emit = defineEmits<{
+  (e: ""close""): void;
+  (e: ""create"", version: VersionSchema): void;
+}>();
+
+const versionName = computed(() => versionToString(projectStore.version));
+
+/**
+ * Returns the next version name.
+ * @param type - The type of new version.
+ */
+function nextVersion(type: VersionType): string {
+  if (projectStore.version === undefined) {
+    return ""X.X.X"";
+  }
+
+  const { majorVersion, minorVersion, revision } = projectStore.version;
+
+  switch (type) {
+    case ""major"":
+      return `${majorVersion + 1}.0.0`;
+    case ""minor"":
+      return `${majorVersion}.${minorVersion + 1}.0`;
+    case ""revision"":
+      return `${majorVersion}.${minorVersion}.${revision + 1}`;
+  }
+}
+
+/**
+ * Creates a new version.
+ * @param versionType - The version type to create.
+ */
+function handleClick(versionType: VersionType) {
+  if (!props.project) return;
+
+  createVersionApiStore.handleCreate(props.project.projectId, versionType, {
+    onSuccess: (version) => emit(""create"", version),
+  });
+}
+</script>
+",Code,"This code provides a user interface for creating new versions of a project. The user can access this functionality through a modal window that displays the current version of the project and offers buttons to create a new major version, minor version, or revision version. When the user clicks one of these buttons, the code calculates the next version name based on the current version and the selected version type, and then calls an API to create the new version. The modal design and version name calculations make the version creation process intuitive and easy for the user to understand and interact with, allowing them to efficiently manage the versioning of their project.",
+components/project/selector/table/ProjectSelectorTable.vue,"<template>
+  <selector-table
+    v-model:selected=""selectedItems""
+    :minimal=""props.minimal""
+    addable
+    :editable=""isEditable""
+    :deletable=""isDeletable""
+    :loading=""getProjectApiStore.loading""
+    :columns=""columns""
+    :rows=""rows""
+    row-key=""projectId""
+    item-name=""project""
+    :icons=""{
+      add: 'project-add',
+      edit: 'project-edit',
+      delete: 'project-delete',
+    }""
+    data-cy=""table-project""
+    :custom-cells=""['name']""
+    @refresh=""handleReload""
+    @row:add=""identifierSaveStore.selectIdentifier(undefined, 'save')""
+    @row:edit=""identifierSaveStore.selectIdentifier($event, 'save')""
+    @row:delete=""identifierSaveStore.selectIdentifier($event, 'delete')""
+  >
+    <template #body-cell-name=""{ row }: { row: ProjectSchema }"">
+      <q-td style=""max-width: 400px"">
+        <typography :value=""row.name"" />
+        <typography
+          :value=""row.description""
+          secondary
+          el=""div""
+          class=""text-ellipsis""
+        />
+      </q-td>
+    </template>
+    <template #cell-actions=""{ row }: { row: ProjectSchema }"">
+      <icon-button
+        v-if=""isEditable(row)""
+        :small=""props.minimal""
+        :tooltip=""`Invite to ${row.name}`""
+        icon=""invite""
+        data-cy=""button-project-invite""
+        @click=""projectInviteId = row.projectId""
+      />
+      <icon-button
+        v-if=""row.members.length > 1""
+        :small=""props.minimal""
+        icon=""leave""
+        tooltip=""Leave project""
+        data-cy=""button-selector-leave""
+        @click=""handleLeave(row)""
+      />
+    </template>
+  </selector-table>
+
+  <invite-member-modal
+    :open=""!!projectInviteId""
+    :entity=""entity""
+    @close=""projectInviteId = undefined""
+    @submit=""projectInviteId = undefined""
+  />
+</template>
+
+<script lang=""ts"">
+/**
+ * A table for selecting projects.
+ */
+export default {
+  name: ""ProjectSelectorTable"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, onMounted, ref, watch } from ""vue"";
+import { useRoute } from ""vue-router"";
+import {
+  IdentifierSchema,
+  MemberEntitySchema,
+  ProjectSchema,
+  ProjectSelectorTableProps,
+} from ""@/types"";
+import { projectColumns, projectNameColumn } from ""@/util"";
+import {
+  getProjectApiStore,
+  identifierSaveStore,
+  memberApiStore,
+  permissionStore,
+  projectStore,
+  sessionStore,
+} from ""@/hooks"";
+import { SelectorTable, IconButton } from ""@/components/common"";
+import { InviteMemberModal } from ""@/components/members"";
+import Typography from ""@/components/common/display/content/Typography.vue"";
+
+const props = defineProps<ProjectSelectorTableProps>();
+
+const emit = defineEmits<{
+  /**
+   * Emitted when the selected project changes.
+   */
+  (e: ""selected"", project: IdentifierSchema | undefined): void;
+}>();
+
+const currentRoute = useRoute();
+
+const selected = ref<IdentifierSchema | undefined>();
+const projectInviteId = ref<string>();
+
+const columns = computed(() =>
+  props.minimal ? [projectNameColumn] : projectColumns
+);
+const rows = computed(() => projectStore.allProjects);
+
+const entity = computed(
+  () =>
+    ({
+      entityId: projectInviteId.value,
+      entityType: ""PROJECT"",
+    }) as MemberEntitySchema
+);
+
+const selectedItems = computed({
+  get() {
+    return selected.value ? [selected.value] : [];
+  },
+  set(items: IdentifierSchema[]) {
+    selected.value = items[0];
+    emit(""selected"", items[0]);
+  },
+});
+
+/**
+ * Loads all projects.
+ */
+function handleReload() {
+  selected.value = undefined;
+  projectInviteId.value = undefined;
+
+  getProjectApiStore.handleReload();
+}
+
+/**
+ * Removes the current user from the project.
+ * @param project - The project to leave.
+ */
+function handleLeave(project: IdentifierSchema) {
+  const member = sessionStore.getCurrentMember(project);
+
+  if (!member) return;
+
+  memberApiStore.handleDelete(member, project);
+}
+
+/**
+ * Whether the current user can edit the project.
+ * @param project - The project to check.
+ * @returns Whether the current user can edit the project.
+ */
+function isEditable(project: IdentifierSchema): boolean {
+  return permissionStore.isAllowed(""project.edit"", project);
+}
+
+/**
+ * Whether the current user can delete the project.
+ * @param project - The project to check.
+ * @returns Whether the current user can delete the project.
+ */
+function isDeletable(project: IdentifierSchema): boolean {
+  return permissionStore.isAllowed(""project.delete"", project);
+}
+
+/**
+ * Loads all projects when opened.
+ */
+watch(
+  () => props.open,
+  (open) => {
+    if (!open) return;
+
+    handleReload();
+  }
+);
+
+/**
+ * Loads all projects when the page changes.
+ */
+watch(
+  () => currentRoute.path,
+  () => handleReload()
+);
+
+/**
+ * Loads all projects when mounted.
+ */
+onMounted(() => handleReload());
+</script>
+",Code,"This code provides users with a comprehensive project management interface, allowing them to view, select, and interact with a list of projects. The table-like component at the core of this interface can be configured to display projects in a minimal or full-featured manner, catering to the user's needs. Users can select a project by clicking on it, and this selection is emitted as an event, enabling further actions or integrations.
+
+Beyond simple viewing and selection, the table also empowers users to manage projects more actively. They can add new projects, edit existing ones, and even delete projects they have the necessary permissions to modify. The table's behavior is driven by various stores and APIs, ensuring the project data is loaded and updated seamlessly.
+
+Additionally, the table offers specialized functionality, such as the ability to invite users to a project and leave a project. These features are tailored to the collaborative nature of project management, allowing users to engage with their teams and control their involvement as needed.
+
+Overall, this code delivers a powerful and flexible project management tool, enabling users to efficiently navigate, interact with, and administer their projects within the broader software system.",
+components/artifact/panel/ArtifactBodyPanel.vue,"<template>
+  <details-panel panel=""displayArtifactBody"">
+    <artifact-body />
+  </details-panel>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays artifact content.
+ */
+export default {
+  name: ""ArtifactBodyPanel"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { DetailsPanel } from ""@/components/common"";
+import { ArtifactBody } from ""@/components/artifact/display"";
+</script>
+",Code,"Users can view the content of an artifact through this code. The ""details-panel"" component provides a way for users to expand or collapse the panel to show or hide the artifact content, while the ""artifact-body"" component is responsible for rendering the actual content of the artifact. This code is part of a larger software system that deals with artifacts, and it allows users to easily access and view the details of a particular artifact. The user can interact with the ""details-panel"" to control the visibility of the artifact content, and the ""artifact-body"" component ensures that the content is displayed in a clear and organized manner.",
+components/artifact/save/ArtifactSummary.vue,"<template>
+  <flex-box justify=""between"" align=""center"">
+    <typography variant=""caption"" value=""Summary"" />
+    <text-button
+      v-if=""!generateApproval && displayActions""
+      text
+      color=""primary""
+      :loading=""artifactGenerationApiStore.summaryGenLoading""
+      :icon=""hasSummary ? 'graph-refresh' : 'generate'""
+      :label=""hasSummary ? 'Resummarize' : 'Summarize'""
+      @click=""handleGenerateSummary""
+    />
+    <q-card v-else-if=""displayActions"" bordered>
+      <text-button text icon=""save"" label=""Save"" @click=""handleSaveSummary"" />
+      <text-button
+        text
+        :loading=""artifactGenerationApiStore.summaryGenLoading""
+        icon=""graph-refresh""
+        label=""Retry""
+        @click=""handleGenerateSummary""
+      />
+      <text-button
+        text
+        icon=""delete""
+        label=""Delete""
+        @click=""handleDeleteSummary""
+      />
+    </q-card>
+  </flex-box>
+  <flex-box full-width>
+    <typography
+      v-if=""hasSummary && !generateApproval""
+      default-expanded
+      :collapse-length=""0""
+      variant=""expandable""
+      :value=""summary""
+      data-cy=""text-selected-body""
+    />
+    <q-card
+      v-else-if=""generateApproval""
+      bordered
+      class=""full-width q-pa-sm q-mt-sm""
+    >
+      <text-input
+        v-model=""summary""
+        label=""Generated Summary""
+        type=""textarea""
+        hide-hint
+      />
+    </q-card>
+  </flex-box>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the selected node's summary, and allows for regenerating summaries.
+ */
+export default {
+  name: ""ArtifactSummary"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, watch } from ""vue"";
+import {
+  artifactGenerationApiStore,
+  permissionStore,
+  selectionStore,
+} from ""@/hooks"";
+import { Typography, FlexBox, TextButton } from ""@/components/common"";
+import TextInput from ""@/components/common/input/TextInput.vue"";
+
+const displayActions = computed(() =>
+  permissionStore.isAllowed(""project.generate"")
+);
+
+const artifact = computed(() => selectionStore.selectedArtifact);
+
+const generateConfirmation = computed(
+  () => artifactGenerationApiStore.summaryGenConfirm
+);
+
+const summary = computed<string>({
+  get() {
+    return generateConfirmation.value?.summary || artifact.value?.summary || """";
+  },
+  set(value) {
+    if (!generateConfirmation.value) return;
+
+    generateConfirmation.value.summary = value;
+  },
+});
+
+const hasSummary = computed(() => !!summary.value);
+const generateApproval = computed(() => !!generateConfirmation.value);
+
+/**
+ * Generates a summary for the artifact.
+ */
+function handleGenerateSummary(): void {
+  if (!artifact.value) return;
+
+  artifactGenerationApiStore.handleGenerateSummary(artifact.value);
+}
+
+/**
+ * Saves the generated summary for the artifact.
+ */
+function handleSaveSummary(): void {
+  generateConfirmation.value?.confirm();
+}
+
+/**
+ * Deletes the generated summary for the artifact.
+ */
+function handleDeleteSummary(): void {
+  generateConfirmation.value?.clear();
+}
+
+watch(
+  () => artifact.value,
+  () => generateConfirmation.value?.clear()
+);
+</script>
+",Code,"This code provides a user interface for managing the summary of a selected artifact. Users with the necessary permissions can generate a new summary for the artifact, view the generated summary, and save or delete the summary as needed.
+
+The interface displays the current summary, if available, in an expandable typography component. If a summary has not yet been generated, the user can click a ""Summarize"" button to initiate the generation process. The interface also provides a ""Resummarize"" button if a summary already exists, allowing the user to regenerate the summary.
+
+During the summary generation process, the interface displays a loading indicator and a ""Retry"" button in case the generation fails. Once the summary is generated, the user can save the summary by clicking a ""Save"" button, or delete the summary by clicking a ""Delete"" button.
+
+The code utilizes various components and stores to manage the state of the summary generation and display, and it also watches for changes in the selected artifact, clearing the generated summary when the artifact changes.",
+components/project/creator/upload/UploadPanelName.vue,"<template>
+  <flex-box
+    v-if=""props.panel.variant === 'trace'""
+    full-width
+    align=""center""
+    y=""2""
+  >
+    <select-input
+      v-model=""props.panel.type""
+      label=""Source Type""
+      :options=""artifactTypes""
+      hint=""Required""
+      class=""full-width""
+      data-cy=""input-source-type""
+    />
+    <icon class=""q-mx-sm"" variant=""trace"" size=""sm"" />
+    <select-input
+      v-model=""props.panel.toType""
+      label=""Target Type""
+      :options=""artifactTypes""
+      hint=""Required""
+      class=""full-width""
+      data-cy=""input-target-type""
+    />
+  </flex-box>
+  <text-input
+    v-if=""props.panel.variant === 'artifact'""
+    v-model=""props.panel.type""
+    label=""Artifact Type""
+    hint=""Required""
+    data-cy=""input-artifact-type""
+  />
+</template>
+
+<script lang=""ts"">
+/**
+ * Provides inputs for the file panel name.
+ */
+export default {
+  name: ""UploadPanelName"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { FilePanelProps } from ""@/types"";
+import { projectSaveStore } from ""@/hooks"";
+import { FlexBox, TextInput, Icon, SelectInput } from ""@/components/common"";
+
+const props = defineProps<FilePanelProps>();
+
+const artifactTypes = computed(() => projectSaveStore.artifactTypes);
+</script>
+",Code,"This code provides a user interface for configuring the file panel in a software application. The user can select from two different panel variants: ""trace"" and ""artifact"". 
+
+In the ""trace"" panel, the user can specify the source and target types of the artifact they are working with, selecting from a list of available artifact types provided by the `projectSaveStore`. The code ensures that both the source and target type inputs are required, displaying a hint to the user if they are not filled out.
+
+For the ""artifact"" panel, the user can directly input the artifact type they are working with, which is also a required field.
+
+The code utilizes various UI components, such as `FlexBox`, `TextInput`, `Icon`, and `SelectInput`, to present these inputs to the user. This configuration likely impacts how the application handles and processes the file being uploaded or worked with.",
+components/project/editor/SaveProjectInputs.vue,"<template>
+  <div>
+    <project-files-uploader
+      v-if=""!isUpdate""
+      data-cy-name=""input-project-name-modal""
+      data-cy-description=""input-project-description-modal""
+      @submit=""emit('save')""
+    />
+    <project-identifier-input
+      v-else
+      v-model:name=""identifier.name""
+      v-model:description=""identifier.description""
+      is-update
+      data-cy-name=""input-project-name-modal""
+      data-cy-description=""input-project-description-modal""
+    />
+    <flex-box full-width justify=""end"">
+      <text-button
+        v-if=""isUpdate""
+        color=""primary""
+        label=""Save""
+        :disabled=""!canSave""
+        :loading=""loading""
+        data-cy=""button-project-save""
+        @click=""handleSave""
+      />
+    </flex-box>
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * Inputs for creating or editing a project.
+ */
+export default {
+  name: ""SaveProjectInputs"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import {
+  projectApiStore,
+  identifierSaveStore,
+  getProjectApiStore,
+} from ""@/hooks"";
+import { TextButton, FlexBox } from ""@/components/common"";
+import {
+  ProjectFilesUploader,
+  ProjectIdentifierInput,
+} from ""@/components/project/save"";
+
+const emit = defineEmits<{
+  (e: ""save""): void;
+}>();
+
+const identifier = computed(() => identifierSaveStore.editedIdentifier);
+const isUpdate = computed(() => identifierSaveStore.isUpdate);
+const canSave = computed(() => identifierSaveStore.canSave);
+const loading = computed(() => projectApiStore.saveProjectLoading);
+
+/**
+ * Saves the project being edited.
+ */
+function handleSave(): void {
+  projectApiStore.handleSave({
+    onSuccess: async () => {
+      emit(""save"");
+
+      await getProjectApiStore.handleReload();
+    },
+  });
+}
+</script>
+",Code,"This code provides a user interface for creating and editing projects. The user can either create a new project by providing a name and description, or edit an existing project by updating its name and description. The interface includes a ""Save"" button that the user can click to save their changes.
+
+The code uses several computed properties to manage the state of the project being edited, such as whether the user is creating a new project or editing an existing one, whether the user can save the project, and whether the project is currently being saved. When the user clicks the ""Save"" button, the code calls a function that saves the project and reloads the project data.
+
+Overall, this code provides a straightforward and intuitive way for users to create and manage projects within the software system it belongs to.",
+components/artifact/display/ArtifactBody.vue,"<template>
+  <div>
+    <text-button
+      text
+      label=""View Artifact""
+      b=""2""
+      icon=""artifact""
+      @click=""appStore.openDetailsPanel('displayArtifact')""
+    />
+    <panel-card>
+      <typography
+        default-expanded
+        :collapse-length=""0""
+        :variant=""variant""
+        el=""p""
+        :value=""body""
+      />
+    </panel-card>
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the selected node's body.
+ */
+export default {
+  name: ""ArtifactBody"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { appStore, selectionStore } from ""@/hooks"";
+import { Typography, TextButton, PanelCard } from ""@/components/common"";
+
+const artifact = computed(() => selectionStore.selectedArtifact);
+
+const body = computed(() => artifact.value?.body.trim() || """");
+
+const variant = computed(() =>
+  artifact.value?.isCode ? ""code"" : ""expandable""
+);
+</script>
+",Code,"This code provides users with the ability to view and interact with artifacts within the software system. When the ""View Artifact"" button is clicked, a details panel is opened, displaying the artifact's body in a panel card component. The code determines the appropriate display format for the artifact's body, rendering it either in a code-specific format or an expandable format, depending on whether the artifact is considered ""code"" or not. This allows users to easily access and view the content of the selected artifact, with the display tailored to the type of content being presented. The code encapsulates the functionality for displaying and interacting with artifacts, providing a user-friendly interface for navigating and exploring the software system's content.",
+components/project/editor/ProjectDisplay.vue,"<template>
+  <panel-card :title=""project.name"">
+    <template #title-actions>
+      <text-button
+        v-if=""editMode""
+        text
+        label=""Cancel""
+        icon=""cancel""
+        @click=""appStore.close('editProject')""
+      />
+      <typography v-else secondary :value=""versionLabel"" />
+    </template>
+
+    <div v-if=""!editMode"">
+      <flex-box column b=""4"">
+        <typography value=""Project Data"" variant=""caption"" />
+
+        <typography :value=""artifactTypeLabel"" />
+        <typography :value=""artifactLabel"" />
+        <typography :value=""traceLabel"" />
+      </flex-box>
+
+      <typography value=""Artifact Types"" variant=""caption"" />
+      <flex-box
+        v-for=""[parent, children] in artifactTypeMap""
+        :key=""parent""
+        column
+        t=""3""
+      >
+        <attribute-chip artifact-type :value=""parent"" />
+        <flex-box v-if=""children.length > 0"" l=""4"">
+          <icon
+            class=""q-mx-xs q-mt-xs""
+            size=""sm""
+            color=""text""
+            variant=""trace""
+            :rotate=""-90""
+          />
+          <flex-box column>
+            <attribute-chip
+              v-for=""child in children""
+              :key=""child""
+              artifact-type
+              :value=""child""
+            />
+          </flex-box>
+        </flex-box>
+      </flex-box>
+    </div>
+
+    <save-project-inputs v-else @save=""appStore.close('editProject')"" />
+  </panel-card>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays high level project information.
+ */
+export default {
+  name: ""ProjectDisplay"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { versionToString } from ""@/util"";
+import { appStore, projectStore, timStore } from ""@/hooks"";
+import {
+  PanelCard,
+  AttributeChip,
+  FlexBox,
+  Icon,
+  TextButton,
+  Typography,
+} from ""@/components/common"";
+import SaveProjectInputs from ""./SaveProjectInputs.vue"";
+
+const editMode = computed(() => appStore.popups.editProject);
+
+const project = computed(() => projectStore.project);
+
+const versionLabel = computed(
+  () => `Version ${versionToString(project.value.projectVersion)}`
+);
+
+const artifactTypeLabel = computed(
+  () => `${project.value.artifactTypes.length} Artifact Types`
+);
+
+const artifactLabel = computed(
+  () => `${project.value.artifacts.length} Artifacts`
+);
+
+const traceLabel = computed(() => `${project.value.traces.length} Trace Links`);
+
+const artifactTypeMap = computed(() =>
+  Object.entries(
+    timStore.traceMatrices.reduce(
+      (acc, matrix) => ({
+        ...acc,
+        [matrix.targetType]: [
+          ...(acc[matrix.targetType] || []),
+          matrix.sourceType,
+        ],
+      }),
+      timStore.artifactTypes
+        .map(({ name }) => ({ [name]: [] }))
+        .reduce(
+          (acc, cur) => ({ ...acc, ...cur }),
+          {} as Record<string, string[]>
+        )
+    )
+  )
+);
+</script>
+",Code,"The provided code allows users to view and interact with a project display that presents high-level information about a specific project. The project display is presented within a panel card component, which displays the project name and provides access to various project details. Users can toggle between a read-only mode and an edit mode, where they can access a ""Save Project Inputs"" component to potentially modify the project details. The code utilizes a range of Vue.js components, such as FlexBox, AttributeChip, and Typography, to present the project information in a structured and visually appealing manner. Additionally, the code integrates with the application store and project store to retrieve and manage the project data, and it employs utility functions to format the project version information. Overall, this code empowers users to view and potentially edit key details about a project, facilitating project management and collaboration within the software system.",
+components/graph/artifact/ArtifactMenu.vue,"<template>
+  <node-display
+    v-if=""displayActions""
+    variant=""menu""
+    color=""neutral""
+    @mousedown.stop
+    @mouseup.stop
+  >
+    <flex-box>
+      <icon-button
+        tooltip=""Create artifact""
+        icon=""create-artifact""
+        data-cy=""button-add-artifact""
+        @click=""
+          handleAction(() =>
+            artifactSaveStore.openPanel({ isNewArtifact: true })
+          )
+        ""
+      />
+      <icon-button
+        tooltip=""Create trace link""
+        icon=""create-trace""
+        data-cy=""button-add-trace""
+        @click=""handleAction(() => traceSaveStore.openPanel())""
+      />
+      <icon-button
+        :tooltip=""drawMode ? 'Cancel Draw Mode' : 'Draw Trace Link'""
+        :icon=""drawMode ? 'cancel' : 'trace'""
+        @click=""handleAction(() => cyStore.drawMode('toggle'))""
+      />
+      <separator v-if=""displayGenerateActions"" vertical class=""q-mx-xs"" />
+      <icon-button
+        v-if=""displayGenerateActions""
+        tooltip=""Summarize artifacts""
+        icon=""generate-summaries""
+        color=""gradient""
+        data-cy=""button-summarize-artifact""
+        @click=""
+          handleAction(() => appStore.openDetailsPanel('summarizeArtifact'))
+        ""
+      />
+      <icon-button
+        v-if=""displayGenerateActions""
+        tooltip=""Generate artifacts""
+        icon=""generate-artifacts""
+        color=""gradient""
+        data-cy=""button-generate-artifact""
+        @click=""
+          handleAction(() => appStore.openDetailsPanel('generateArtifact'))
+        ""
+      />
+      <icon-button
+        v-if=""displayGenerateActions""
+        tooltip=""Generate trace links""
+        icon=""generate-traces""
+        color=""gradient""
+        data-cy=""button-generate-trace""
+        @click=""handleAction(() => appStore.openDetailsPanel('generateTrace'))""
+      />
+    </flex-box>
+  </node-display>
+</template>
+
+<script lang=""ts"">
+/**
+ * Renders a context menu for the artifact tree.
+ */
+export default {
+  name: ""ArtifactMenu"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, inject } from ""vue"";
+import {
+  appStore,
+  artifactSaveStore,
+  cyStore,
+  permissionStore,
+  traceSaveStore,
+} from ""@/hooks"";
+import { FlexBox, IconButton, Separator } from ""@/components/common"";
+import { NodeDisplay } from ""@/components/graph/display"";
+
+const handleCloseMenu = inject<() => void>(""menu-close"");
+
+const drawMode = computed(() => appStore.popups.drawTrace);
+
+const displayActions = computed(() =>
+  permissionStore.isAllowed(""project.edit_data"")
+);
+const displayGenerateActions = computed(() =>
+  permissionStore.isAllowed(""project.generate"")
+);
+
+/**
+ * Handles a menu action and closes the menu.
+ * @param action - The action to handle.
+ */
+function handleAction(action: () => void): void {
+  action();
+  handleCloseMenu?.();
+}
+</script>
+",Code,"This code provides a user interface for a context menu that appears when interacting with a node in an artifact tree. The menu offers a variety of actions the user can take, including creating new artifacts or trace links, toggling a draw mode to create new trace links, and generating summaries, artifacts, or trace links. The availability of these actions is determined by the user's permissions, with some actions only being accessible to users with the appropriate permissions.
+
+The context menu is designed to be a convenient way for users to quickly access and perform common tasks related to the artifact tree, without having to navigate to separate panels or interfaces. The menu can be closed by the user after they have completed their desired action, and the actions themselves will also close the menu. Overall, this code enhances the user's ability to efficiently manage and interact with the artifact tree within the software system.",
+components/graph/artifact/ArtifactNode.vue,"<template>
+  <cy-element
+    :definition=""definition""
+    :style=""style""
+    :data-cy=""dataCy""
+    :data-cy-name=""props.artifact.name""
+    :data-cy-children=""hiddenChildren.length""
+    @add=""handleAdd""
+  >
+    <artifact-node-display
+      :artifact=""props.artifact""
+      :color=""color""
+      :delta-color=""deltaColor""
+      :selected=""selected""
+    />
+    <artifact-node-footer
+      :artifact=""props.artifact""
+      :color=""color""
+      :selected=""selected""
+      :hidden-children=""hiddenChildren""
+    />
+    <artifact-node-actions
+      :artifact=""props.artifact""
+      :color=""color""
+      :selected=""selected""
+      :hidden-children=""hiddenChildren""
+    />
+  </cy-element>
+</template>
+
+<script lang=""ts"">
+/**
+ * Renders an artifact node within the graph.
+ */
+export default {
+  name: ""ArtifactNode"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import {
+  ArtifactCytoElement,
+  ArtifactNodeProps,
+  CytoCore,
+  GraphElementType,
+  GraphMode,
+} from ""@/types"";
+import { getEnumColor } from ""@/util"";
+import {
+  useTheme,
+  deltaStore,
+  selectionStore,
+  subtreeStore,
+  layoutStore,
+  timStore,
+} from ""@/hooks"";
+import { CyElement } from ""@/components/graph/base"";
+import ArtifactNodeActions from ""./ArtifactNodeActions.vue"";
+import ArtifactNodeFooter from ""./ArtifactNodeFooter.vue"";
+import ArtifactNodeDisplay from ""./ArtifactNodeDisplay.vue"";
+
+const props = defineProps<ArtifactNodeProps>();
+
+const { darkMode } = useTheme();
+
+const id = computed(() => props.artifact.id);
+
+const selected = computed(() => selectionStore.isArtifactInSelected(id.value));
+const faded = computed(() => !props.artifactsInView.includes(id.value));
+const hidden = computed(() =>
+  subtreeStore.hiddenSubtreeNodes.includes(id.value)
+);
+
+const opacity = computed(() => (hidden.value ? 0 : faded.value ? 0.3 : 1));
+const style = computed(
+  () =>
+    `opacity: ${opacity.value};` +
+    (selected.value ? ""z-index: 10;"" : ""z-index: 1;"")
+);
+
+const hiddenChildren = computed(() => subtreeStore.getHiddenChildren(id.value));
+
+const deltaState = computed(() => deltaStore.getArtifactDeltaType(id.value));
+const showDelta = computed(() => deltaStore.inDeltaView);
+
+const deltaColor = computed(() => getEnumColor(deltaState.value));
+const typeColor = computed(() => timStore.getTypeColor(props.artifact.type));
+const color = computed(() =>
+  showDelta.value ? deltaColor.value : typeColor.value
+);
+
+const dataCy = computed(() =>
+  selected.value ? ""tree-node-selected"" : ""tree-node""
+);
+
+const definition = computed<ArtifactCytoElement>(() => {
+  const { id, type, name } = props.artifact;
+
+  return {
+    data: {
+      type: GraphElementType.node,
+      graph: ""tree"" as GraphMode,
+      id,
+
+      artifactName: name,
+      artifactType: type,
+
+      dark: darkMode.value,
+    },
+  };
+});
+
+/**
+ * Handles the add event to set this artifact's default position,
+ * and highlight it if it is selected.
+ */
+function handleAdd(cy: CytoCore): void {
+  cy.getElementById(id.value).layout(layoutStore.layoutOptions).run();
+
+  if (id.value !== selectionStore.selectedArtifact?.id) return;
+
+  selectionStore.selectArtifact(id.value);
+}
+</script>
+",Code,"The provided code allows users to view and interact with artifact nodes within a graph. Users can see the name, type, and any hidden children of each artifact node. The nodes can be selected, highlighted, faded, or hidden based on the user's interactions with the graph. When a node is added to the graph, its default position is set, and it is highlighted if it is selected. The code also provides visual cues to the user, such as using different colors to indicate the artifact's type or delta state, and adjusting the opacity of the node based on whether it is hidden or faded. This allows users to navigate and interact with the artifact nodes within the graph, providing them with a visual representation of the data and the ability to perform various actions on the nodes.",
+components/artifact/save/SaveArtifactInputs.vue,"<template>
+  <div>
+    <text-input
+      v-model=""store.editedArtifact.name""
+      label=""Artifact Name""
+      hint=""Enter a unique name for the artifact""
+      :error-message=""artifactApiStore.nameError""
+      :loading=""artifactApiStore.nameLoading""
+      class=""q-mb-md""
+      data-cy=""input-artifact-name""
+    >
+      <template #append>
+        <icon-button
+          v-if=""ENABLED_FEATURES.ARTIFACT_PROMPTS""
+          :loading=""artifactGenerationApiStore.nameGenLoading""
+          tooltip=""Generate the name based on the body""
+          icon=""generate""
+          @click=""handleGenerateName""
+        />
+      </template>
+    </text-input>
+
+    <artifact-type-input
+      v-model=""store.editedArtifact.type""
+      label=""Artifact Type""
+      hint=""Press enter to save a new artifact type""
+      class=""q-mb-md""
+      data-cy=""input-artifact-type""
+    />
+
+    <text-input
+      v-model=""store.editedArtifact.body""
+      label=""Artifact Body""
+      type=""textarea""
+      hint=""Required""
+      class=""q-mb-md""
+      data-cy=""input-artifact-body""
+    >
+      <template #append>
+        <icon-button
+          v-if=""ENABLED_FEATURES.ARTIFACT_PROMPTS""
+          :loading=""artifactGenerationApiStore.bodyGenLoading""
+          tooltip=""Generate the body based on a prompt""
+          icon=""generate""
+          @click=""handleGenerateBody""
+        />
+      </template>
+    </text-input>
+
+    <text-input
+      v-if=""store.hasSummary""
+      v-model=""store.editedArtifact.summary""
+      label=""Artifact Summary""
+      type=""textarea""
+      class=""q-mb-md""
+      data-cy=""input-artifact-summary""
+    />
+
+    <artifact-input
+      v-if=""!store.isUpdate""
+      v-model=""store.parentId""
+      only-document-artifacts
+      label=""Parent Artifact""
+      data-cy=""input-artifact-parent""
+      class=""q-mb-md""
+    />
+
+    <attribute-list-input :artifact=""store.editedArtifact"" />
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * Inputs for artifact creation and editing.
+ */
+export default {
+  name: ""SaveArtifactInputs"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { ENABLED_FEATURES } from ""@/util"";
+import {
+  artifactGenerationApiStore,
+  artifactSaveStore,
+  artifactApiStore,
+} from ""@/hooks"";
+import {
+  ArtifactInput,
+  ArtifactTypeInput,
+  AttributeListInput,
+  TextInput,
+  IconButton,
+} from ""@/components/common"";
+
+const store = computed(() => artifactSaveStore);
+
+/**
+ * Generates the name of the artifact based on the body.
+ */
+function handleGenerateName() {
+  artifactGenerationApiStore.handleGenerateName();
+}
+
+/**
+ * Generates the body of the artifact based on a prompt.
+ */
+function handleGenerateBody() {
+  artifactGenerationApiStore.handleGenerateBody();
+}
+</script>
+",Code,"This code provides a comprehensive interface for users to create and edit artifacts within a software system. Users can enter details such as the artifact's name, type, body, and summary, with the ability to generate the name and body automatically based on the artifact's content. The code also allows users to specify a parent artifact for the new artifact being created, and to add and edit attributes associated with the artifact. By offering these various input fields and components, the code empowers users to effectively manage and maintain the artifacts within the system, facilitating the organization and documentation of the software's functionality and components.",
+components/project/creator/upload/UploadPanelErrors.vue,"<template>
+  <flex-box full-width justify=""between"" align=""center"" y=""2"">
+    <switch-input
+      v-model=""props.panel.ignoreErrors""
+      label=""Ignore Errors""
+      color=""grey""
+      class=""q-mr-sm""
+      data-cy=""button-ignore-errors""
+    />
+    <typography v-if=""!!errorMessage"" :value=""errorMessage"" color=""negative"" />
+  </flex-box>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays any errors for this panel.
+ */
+export default {
+  name: ""UploadPanelErrors"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, watch } from ""vue"";
+import { FilePanelProps } from ""@/types"";
+import { integrationsStore } from ""@/hooks"";
+import { SwitchInput, FlexBox, Typography } from ""@/components/common"";
+
+const props = defineProps<FilePanelProps>();
+
+const errorMessage = computed(() => {
+  if (
+    (props.panel.variant === ""artifact"" || props.panel.variant === ""trace"") &&
+    !props.panel.name
+  ) {
+    return ""Requires a name"";
+  } else if (props.panel.ignoreErrors) {
+    return undefined;
+  } else if (
+    (props.panel.variant === ""artifact"" || props.panel.variant === ""trace"") &&
+    !props.panel.file &&
+    !props.panel.isGenerated
+  ) {
+    return ""No files have been uploaded."";
+  } else if (
+    (props.panel.variant === ""jira"" || props.panel.variant === ""github"") &&
+    !integrationsStore.gitHubProject &&
+    !integrationsStore.jiraProject
+  ) {
+    return ""Select a project to import."";
+  } else if (
+    props.panel.variant === ""bulk"" &&
+    (props.panel.bulkFiles.length === 0 ||
+      !props.panel.bulkFiles.find(({ name }) => name === ""tim.json"")) &&
+    !props.panel.emptyFiles
+  ) {
+    return ""Requires a tim.json configuration file."";
+  } else {
+    return props.panel.parseErrorMessage;
+  }
+});
+
+// Update the panel validity and error when the error check updates.
+watch(
+  () => errorMessage.value,
+  (message) => {
+    props.panel.errorMessage = message;
+    props.panel.valid = !message;
+  }
+);
+</script>
+",Code,"The UploadPanelErrors component provides a user interface for displaying any errors associated with a file panel. It includes a switch input that allows the user to ignore any errors, and a typography component that displays the error message if one exists.
+
+The component uses computed properties to determine the appropriate error message to display based on the properties of the file panel. It checks for various conditions, such as whether the panel has a name, a file uploaded or generated, a selected project for Jira or GitHub integration, or a ""tim.json"" configuration file for bulk uploads. If any of these conditions are not met, the component will display a corresponding error message.
+
+The component also updates the ""valid"" property of the file panel based on whether an error message is displayed or not, allowing other parts of the application to respond to the panel's validity. This provides the user with a clear understanding of the status of the file panel and the actions they need to take to resolve any issues.",
+components/artifact/panel/ArtifactPanel.vue,"<template>
+  <details-panel panel=""displayArtifact"">
+    <artifact-buttons />
+    <artifact-content />
+    <artifact-traces />
+    <artifact-documents />
+    <artifact-errors />
+  </details-panel>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays artifact information.
+ */
+export default {
+  name: ""ArtifactPanel"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { DetailsPanel } from ""@/components/common"";
+import {
+  ArtifactContent,
+  ArtifactDocuments,
+  ArtifactTraces,
+  ArtifactErrors,
+} from ""@/components/artifact/display"";
+import { ArtifactButtons } from ""@/components/artifact/save"";
+</script>
+",Code,"This code provides users with a comprehensive interface to view and interact with an artifact within a larger software system. The ""details-panel"" component serves as the main container, housing several sub-components that each display specific information or functionality related to the artifact.
+
+Users can access the artifact's main content and details through the ""artifact-content"" component, while the ""artifact-traces"" and ""artifact-documents"" components allow them to view any related history or associated files. The ""artifact-buttons"" component likely provides controls for users to save, update, or perform other actions on the artifact, and the ""artifact-errors"" component would display any issues or problems with the artifact.
+
+Together, these components create a centralized hub where users can access all the relevant information and features needed to effectively manage and work with the artifact in question. The code appears to be part of a larger software system focused on artifact management, and this panel serves as a crucial interface for users to interact with and maintain the artifacts within that system.",
+components/project/selector/ProjectLoader.vue,"<template>
+  <tab-list v-model=""tab"" :tabs=""tabs"">
+    <template #load>
+      <project-version-stepper />
+    </template>
+    <template v-if=""hasProject"" #project>
+      <jobs-table :display-project-jobs=""true"" />
+    </template>
+    <template #user>
+      <jobs-table :display-project-jobs=""false"" />
+    </template>
+  </tab-list>
+</template>
+
+<script lang=""ts"">
+/**
+ * Allows for loading created projects and versions, as well as viewing past project uploads.
+ */
+export default {
+  name: ""ProjectLoader"",
+};
+</script>
+
+<script lang=""ts"" setup>
+import { computed, ref } from ""vue"";
+import { loaderTabOptions } from ""@/util"";
+import { projectStore } from ""@/hooks"";
+import { TabList } from ""@/components/common"";
+import { JobsTable } from ""@/components/jobs"";
+import ProjectVersionStepper from ""./ProjectVersionStepper.vue"";
+
+const hasProject = computed(() => projectStore.projectId !== """");
+const allTabs = loaderTabOptions();
+const tabs = computed(() => (hasProject.value ? allTabs : allTabs.slice(0, 2)));
+const tab = ref(tabs.value[0].id);
+</script>
+",Code,"This code provides a user interface for interacting with a project management system. Users can load and navigate through different versions of a project, view jobs associated with the currently loaded project, and access job-related information not associated with any specific project. The interface utilizes a tab-based layout, where the available tabs adjust based on the presence of a loaded project. If a project is available, the user can access all three tabs: ""Load"" for loading project versions, ""Project"" for viewing project-specific jobs, and ""User"" for viewing jobs not associated with a project. If no project is available, only the first two tabs are displayed. This allows users to seamlessly switch between different views and access the desired project management functionality.",
+components/artifact/panel/ArtifactSummarizationPanel.vue,"<template>
+  <details-panel panel=""summarizeArtifact"">
+    <panel-card>
+      <q-btn-group flat class=""q-mb-md"">
+        <text-button
+          v-bind=""buttonProps('single')""
+          label=""Artifacts""
+          icon=""artifact""
+          @click=""mode = 'single'""
+        />
+        <text-button
+          v-bind=""buttonProps('multiple')""
+          label=""Artifact Types""
+          icon=""view-tim""
+          @click=""mode = 'multiple'""
+        />
+      </q-btn-group>
+
+      <div v-if=""mode === 'single'"" class=""q-mb-md"">
+        <artifact-input
+          v-model=""artifactIds""
+          multiple
+          label=""Artifacts""
+          hint=""Summarize the contents of each artifact listed.""
+        />
+      </div>
+      <div v-else class=""q-mb-md"">
+        <artifact-type-input
+          v-model=""artifactTypes""
+          multiple
+          label=""Artifact Types""
+          hint=""Summarize the contents of all artifacts of the selected types.""
+        />
+      </div>
+
+      <flex-box full-width justify=""end"" t=""3"">
+        <text-button
+          :disabled=""!canGenerate""
+          :loading=""artifactGenerationApiStore.artifactGenLoading""
+          label=""Generate""
+          color=""primary""
+          @click=""handleGenerate""
+        />
+      </flex-box>
+    </panel-card>
+  </details-panel>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays inputs for summarizing artifacts.
+ */
+export default {
+  name: ""ArtifactSummarizationPanel"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, ref, watch } from ""vue"";
+import {
+  appStore,
+  artifactGenerationApiStore,
+  artifactStore,
+  selectionStore,
+} from ""@/hooks"";
+import {
+  DetailsPanel,
+  PanelCard,
+  FlexBox,
+  TextButton,
+  ArtifactInput,
+  ArtifactTypeInput,
+} from ""@/components/common"";
+
+const mode = ref<""single"" | ""multiple"">(""single"");
+const artifactIds = ref<string[]>([]);
+const artifactTypes = ref<string[]>([]);
+
+const canGenerate = computed(() => {
+  if (mode.value === ""single"") {
+    return artifactIds.value.length > 0;
+  } else {
+    return artifactTypes.value.length > 0;
+  }
+});
+
+/**
+ * Returns props for a mode button.
+ * @param option - The mode button to get props for.
+ */
+function buttonProps(option: ""single"" | ""multiple"") {
+  const selected = mode.value === option;
+
+  return {
+    text: !selected,
+    outlined: selected,
+    color: ""primary"",
+    class: selected ? ""nav-mode-selected"" : """",
+  };
+}
+
+/**
+ * Clears all input fields.
+ */
+function handleReset(): void {
+  if (selectionStore.selectedGroupIds.length > 0) {
+    mode.value = ""single"";
+    artifactIds.value = selectionStore.selectedGroupIds;
+    artifactTypes.value = [];
+  } else if (selectionStore.selectedArtifactLevel) {
+    mode.value = ""multiple"";
+    artifactTypes.value = [selectionStore.selectedArtifactLevel.name];
+    artifactIds.value = [];
+  } else {
+    mode.value = ""single"";
+    artifactIds.value = [];
+    artifactTypes.value = [];
+  }
+}
+
+/**
+ * Generates new parent artifacts based on inputted child artifacts.
+ */
+function handleGenerate(): void {
+  const ids: string[] =
+    mode.value === ""single""
+      ? artifactIds.value
+      : artifactTypes.value
+          .map((type) => artifactStore.getArtifactsByType(type))
+          .flatMap<string, string[]>(
+            (artifacts) => artifacts.map(({ id }) => id),
+            []
+          );
+
+  artifactGenerationApiStore.handleGenerateAllSummaries(ids, {
+    onSuccess: () => {
+      handleReset();
+      appStore.closeSidePanels();
+    },
+  });
+}
+
+watch(
+  () => appStore.popups.detailsPanel === ""summarizeArtifact"",
+  (openState) => {
+    if (!openState) return;
+
+    handleReset();
+  }
+);
+</script>
+",Code,"This code provides users with the ability to summarize the contents of artifacts within a software system. The interface offers two modes of operation: ""single"" and ""multiple"". In the ""single"" mode, users can select specific artifacts to be summarized, while in the ""multiple"" mode, users can select artifact types to have all artifacts of those types summarized.
+
+The code includes input components that allow users to make their selections, whether it's individual artifacts or artifact types. Once the user has made their selection, they can click the ""Generate"" button to trigger the generation of summaries for the chosen artifacts or artifact types. The code tracks the state of the artifact generation process, displaying a loading indicator while the summaries are being generated.
+
+Additionally, the code includes functionality to reset the input fields, which is triggered when the details panel is closed. This ensures that the input fields are cleared and the mode is set to the appropriate default value based on the user's current selection state.
+
+Overall, this code provides a user-friendly interface for summarizing the contents of artifacts within a software system, empowering users to explore and understand the artifacts in a more efficient and effective manner.",
+components/artifact/display/ArtifactErrors.vue,"<template>
+  <panel-card
+    v-if=""doDisplay""
+    title=""Warnings""
+    data-cy=""artifact-warnings""
+    collapsable
+  >
+    <template #title-actions>
+      <icon variant=""warning"" />
+    </template>
+
+    <expansion-item
+      v-for=""(warning, idx) in warnings""
+      :key=""idx""
+      :label=""warning.ruleName""
+    >
+      <typography :value=""warning.ruleMessage"" />
+    </expansion-item>
+  </panel-card>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the selected node's error.
+ */
+export default {
+  name: ""ArtifactErrors"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { selectionStore, warningStore } from ""@/hooks"";
+import {
+  Typography,
+  PanelCard,
+  Icon,
+  ExpansionItem,
+} from ""@/components/common"";
+
+const artifact = computed(() => selectionStore.selectedArtifact);
+
+const warnings = computed(() => {
+  const id = artifact.value?.id || """";
+
+  return warningStore.artifactWarnings[id] || [];
+});
+
+const doDisplay = computed(() => warnings.value.length > 0);
+</script>
+",Code,"The code provides a user interface component that allows the user to view and understand the warnings associated with a selected artifact. When the user selects an artifact, the component retrieves the warnings from a store and displays them in a collapsible panel card. Each warning is presented in an expansion item, displaying the rule name and the rule message. The component only displays the panel card if there are warnings associated with the selected artifact, ensuring that the user is only presented with relevant information. This feature can be valuable for debugging or understanding the state of the system, as it allows the user to quickly identify and address any issues or concerns related to the selected artifact.",
+components/artifact/display/ArtifactListDisplay.vue,"<template>
+  <list :scroll-height=""300"" :data-cy=""props.dataCy"">
+    <q-virtual-scroll
+      v-slot=""{ item }: { item: ArtifactSchema }""
+      :items=""props.artifacts""
+      style=""max-height: 300px""
+    >
+      <list-item
+        :key=""item.id""
+        clickable
+        :action-cols=""props.actionCols""
+        :data-cy=""props.itemDataCy""
+        @click=""emit('click', item)""
+      >
+        <artifact-body-display display-title :artifact=""item"" />
+        <template v-if=""!!slots.actions"" #actions>
+          <slot name=""actions"" :artifact=""item"" />
+        </template>
+      </list-item>
+    </q-virtual-scroll>
+  </list>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays a list of artifacts.
+ */
+export default {
+  name: ""ArtifactListDisplay"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { useSlots } from ""vue"";
+import { ArtifactListProps, ArtifactSchema } from ""@/types"";
+import { ArtifactBodyDisplay, List, ListItem } from ""@/components"";
+
+const props = defineProps<ArtifactListProps>();
+
+const emit = defineEmits<{
+  (e: ""click"", artifact: ArtifactSchema): void;
+}>();
+
+const slots = useSlots();
+</script>
+",Code,"This code provides a user interface for displaying a list of artifacts, allowing the user to interact with and customize the list in various ways. The list is displayed within a scrollable container, with each artifact shown as a clickable list item that displays the artifact's title and other relevant information. The user can click on an individual artifact to perform some action, such as viewing more details about that artifact. Additionally, the list can be customized with additional actions or functionality, enabling the user to perform additional operations on the artifacts, such as editing, deleting, or sharing them. The list can also be configured with various properties, such as the data-cy attribute for testing purposes and the items to be displayed (the ""artifacts"" prop), providing the user with a flexible and customizable interface for managing their artifacts.",
+components/project/selector/input/ProjectSelector.vue,"<template>
+  <q-select
+    v-model=""getProjectApiStore.currentProject""
+    standout
+    bg-color=""transparent""
+    class=""nav-breadcrumb""
+    label=""Project""
+    :options=""projectStore.allProjects""
+    :loading=""getVersionApiStore.loadLoading""
+    option-value=""projectId""
+    option-label=""name""
+    @popup-show=""handleReload""
+  >
+    <template #option=""{ opt, itemProps }: { opt: ProjectSchema }"">
+      <list-item v-bind=""itemProps"" :title=""opt.name"" :data-cy-name=""opt.name"">
+        <template #actions>
+          <flex-box justify=""end"">
+            <icon-button
+              v-if=""permissionStore.isAllowed('project.edit_members', opt)""
+              small
+              :tooltip=""`Invite to ${opt.name}`""
+              icon=""member-add""
+              data-cy=""button-project-invite""
+              @click=""projectInviteId = opt.projectId""
+            />
+            <icon-button
+              v-if=""permissionStore.isAllowed('project.edit', opt)""
+              small
+              :tooltip=""`Edit ${opt.name}`""
+              icon=""edit""
+              data-cy=""button-project-edit""
+              @click=""identifierSaveStore.selectIdentifier(opt, 'save')""
+            />
+            <icon-button
+              v-if=""permissionStore.isAllowed('project.delete', opt)""
+              small
+              :tooltip=""`Delete ${opt.name}`""
+              icon=""delete""
+              data-cy=""button-project-delete""
+              @click=""identifierSaveStore.selectIdentifier(opt, 'delete')""
+            />
+          </flex-box>
+        </template>
+      </list-item>
+    </template>
+    <template #after-options>
+      <text-button
+        v-if=""permissionStore.isAllowed('safa.view')""
+        text
+        block
+        label=""Add Project""
+        icon=""add""
+        @click=""identifierSaveStore.selectIdentifier(undefined, 'save')""
+      />
+      <invite-member-modal
+        :open=""!!projectInviteId""
+        :entity=""entity""
+        @close=""projectInviteId = undefined""
+        @submit=""projectInviteId = undefined""
+      />
+    </template>
+  </q-select>
+</template>
+
+<script lang=""ts"">
+/**
+ Displays the current project, and allows it to be changed.
+ */
+export default {
+  name: ""ProjectSelector"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, ref } from ""vue"";
+import { MemberEntitySchema, ProjectSchema } from ""@/types"";
+import {
+  getProjectApiStore,
+  getVersionApiStore,
+  identifierSaveStore,
+  permissionStore,
+  projectStore,
+} from ""@/hooks"";
+import { FlexBox, IconButton, ListItem, TextButton } from ""@/components/common"";
+import { InviteMemberModal } from ""@/components/members"";
+
+const projectInviteId = ref<string>();
+
+const entity = computed(
+  () =>
+    ({
+      entityId: projectInviteId.value,
+      entityType: ""PROJECT"",
+    }) as MemberEntitySchema
+);
+
+/**
+ * Reloads the project list and resets any selected project.
+ */
+function handleReload() {
+  projectInviteId.value = undefined;
+
+  getProjectApiStore.handleReload();
+}
+</script>
+",Code,"The project selector component provides users with the ability to easily manage their projects within the software system. Users can view a list of all available projects, with the currently selected project highlighted. The project list is dynamically loaded, with a loading indicator shown while the data is being fetched. For each project, users can perform various actions, such as inviting other members, editing project details, or deleting the project, depending on their permissions. Additionally, if the user has the necessary permissions, they can add a new project by clicking the ""Add Project"" button. The component also includes a modal dialog that allows users to invite members to the selected project. Overall, this component empowers users to efficiently navigate and manage their projects, ensuring they can focus on their work while having the necessary tools and permissions to collaborate effectively.",
+components/artifact/panel/SaveArtifactPanel.vue,"<template>
+  <details-panel panel=""saveArtifact"" data-cy=""panel-artifact-save"">
+    <text-button
+      text
+      label=""View Artifact""
+      b=""2""
+      icon=""artifact""
+      @click=""appStore.openDetailsPanel('displayArtifact')""
+    />
+    <panel-card>
+      <save-artifact-inputs />
+      <template #actions>
+        <save-artifact-buttons />
+      </template>
+    </panel-card>
+  </details-panel>
+</template>
+
+<script lang=""ts"">
+/**
+ * Allows for creating and editing artifacts.
+ */
+export default {
+  name: ""SaveArtifactPanel"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { watch } from ""vue"";
+import { appStore, artifactSaveStore, selectionStore } from ""@/hooks"";
+import { DetailsPanel, PanelCard, TextButton } from ""@/components/common"";
+import {
+  SaveArtifactInputs,
+  SaveArtifactButtons,
+} from ""@/components/artifact/save"";
+
+watch(
+  () => selectionStore.selectedArtifact,
+  () => artifactSaveStore.resetArtifact()
+);
+</script>
+",Code,"The code provides users with the ability to create and edit artifacts through a details panel interface. Users can view the selected artifact by clicking on the ""View Artifact"" button, which opens the ""displayArtifact"" details panel. Within the ""saveArtifact"" details panel, users can access a card that contains input fields and buttons for saving the artifact. The code utilizes the `appStore`, `artifactSaveStore`, and `selectionStore` to manage the state of the artifact being saved, resetting the artifact when a new one is selected. This allows users to seamlessly create and edit artifacts, with the ability to view the selected artifact and save their changes using the provided interface.",
+components/artifact/save/SaveArtifactButtons.vue,"<template>
+  <flex-box full-width justify=""between"">
+    <text-button
+      v-if=""isUpdate""
+      text
+      :loading=""artifactApiStore.deleteLoading""
+      label=""Delete""
+      icon=""delete""
+      data-cy=""button-artifact-delete""
+      @click=""handleDelete""
+    />
+    <q-space />
+    <text-button
+      :loading=""artifactApiStore.saveLoading""
+      :disabled=""!canSave""
+      label=""Save""
+      icon=""save""
+      data-cy=""button-artifact-save""
+      @click=""handleSubmit""
+    />
+  </flex-box>
+</template>
+
+<script lang=""ts"">
+/**
+ * Buttons for deleting and saving an edited artifact.
+ */
+export default {
+  name: ""SaveArtifactButtons"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import {
+  appStore,
+  artifactApiStore,
+  artifactSaveStore,
+  selectionStore,
+} from ""@/hooks"";
+import { TextButton, FlexBox } from ""@/components/common"";
+
+const canSave = computed(() => artifactSaveStore.canSave);
+const isUpdate = computed(() => artifactSaveStore.isUpdate);
+
+/**
+ * Attempts to delete the selected artifact.
+ */
+function handleDelete(): void {
+  const artifact = selectionStore.selectedArtifact;
+
+  if (!artifact) return;
+
+  artifactApiStore.handleDelete(artifact, {
+    onSuccess: () => appStore.closeSidePanels(),
+  });
+}
+
+/**
+ * Attempts to save the artifact.
+ */
+function handleSubmit(): void {
+  artifactApiStore.handleSave(
+    artifactSaveStore.finalizedArtifact,
+    artifactSaveStore.isUpdate,
+    artifactSaveStore.parentArtifact,
+    {
+      onSuccess: () => appStore.openDetailsPanel(""displayArtifact""),
+    }
+  );
+}
+</script>
+",Code,"This code provides a user interface for managing an artifact, allowing them to delete or save the artifact. The ""Delete"" button is only shown when the artifact is being updated, and clicking it initiates the deletion process by calling the `handleDelete` function, which communicates with a backend API to delete the selected artifact. The ""Save"" button is always displayed, but it is disabled if the artifact cannot be saved in its current state. Clicking the ""Save"" button calls the `handleSubmit` function, which communicates with a backend API to save the artifact. Both buttons display a loading state while the corresponding actions are being processed, providing visual feedback to the user. This code is part of a larger software system that manages artifacts, and it allows users to perform common operations on these artifacts through a user-friendly interface.",
+components/project/creator/upload/UploadPanel.vue,"<template>
+  <expansion-item
+    v-model=""props.panel.open""
+    :label=""props.panel.name || newLabel""
+    :caption=""label""
+    :icon=""iconId""
+    :header-class=""headerClass""
+    data-cy=""panel-files""
+  >
+    <div class=""q-mx-md"">
+      <slot name=""panel"" :panel=""props.panel"" />
+
+      <select-input
+        v-if=""!props.hideUploadType""
+        v-model=""props.panel.variant""
+        label=""Upload Type""
+        :options=""variantOptions""
+        hint=""Required""
+        class=""full-width q-mb-sm""
+        option-to-value
+        option-label=""name""
+        option-value=""id""
+        data-cy=""input-upload-type""
+      />
+
+      <upload-panel-name v-bind=""props"" />
+
+      <file-input
+        v-if=""hasSingleFile""
+        v-model=""props.panel.file""
+        :multiple=""false""
+        data-cy=""input-files-panel""
+      />
+      <project-files-input
+        v-if=""hasBulkFiles""
+        v-model=""props.panel.bulkFiles""
+        v-model:tim=""props.panel.tim""
+        data-cy=""input-files-bulk""
+      />
+
+      <git-hub-project-input v-if=""props.panel.variant === 'github'"" />
+      <jira-project-input v-if=""props.panel.variant === 'jira'"" />
+
+      <switch-input
+        v-if=""props.panel.variant === 'bulk'""
+        v-model=""props.panel.emptyFiles""
+        label=""Create an empty project""
+        data-cy=""toggle-create-empty-project""
+      />
+
+      <expansion-item v-if=""!props.hideUploadType"" label=""Advanced Settings"">
+        <flex-box column>
+          <switch-input
+            v-if=""hasBulkFiles""
+            v-model=""props.panel.summarize""
+            label=""Generate artifact summaries""
+            data-cy=""toggle-create-summarize""
+          />
+          <switch-input
+            v-if=""props.panel.variant === 'trace'""
+            v-model=""props.panel.isGenerated""
+            label=""Generate Trace Links""
+          />
+        </flex-box>
+
+        <upload-panel-errors v-bind=""props"" />
+
+        <list
+          v-if=""hasSingleFile && props.panel.itemNames.length > 0""
+          class=""q-mb-md""
+        >
+          <expansion-item label=""Parsed Entities"">
+            <div class=""q-mx-md"">
+              <attribute-chip
+                v-for=""itemName of props.panel.itemNames""
+                :key=""itemName""
+                :value=""itemName""
+                :icon=""
+                  props.panel.variant === 'artifact' ? 'artifact' : 'trace'
+                ""
+                data-cy=""button-file-entities""
+              />
+            </div>
+          </expansion-item>
+        </list>
+      </expansion-item>
+
+      <flex-box justify=""end"" t=""2"">
+        <text-button
+          v-if=""!props.hideUploadType""
+          text
+          icon=""delete""
+          label=""Delete""
+          data-cy=""button-delete-panel""
+          @click=""handleDeletePanel""
+        />
+      </flex-box>
+    </div>
+  </expansion-item>
+</template>
+
+<script lang=""ts"">
+/**
+ * Provides inputs for uploading a file.
+ */
+export default {
+  name: ""UploadPanel"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, watch } from ""vue"";
+import { FilePanelProps } from ""@/types"";
+import { getIcon, uploadPanelOptions } from ""@/util"";
+import { parseApiStore, projectSaveStore } from ""@/hooks"";
+import {
+  ExpansionItem,
+  FileInput,
+  SwitchInput,
+  TextButton,
+  FlexBox,
+  SelectInput,
+  List,
+  AttributeChip,
+} from ""@/components/common"";
+import { ProjectFilesInput } from ""@/components/project/save"";
+import {
+  GitHubProjectInput,
+  JiraProjectInput,
+} from ""@/components/integrations"";
+import UploadPanelErrors from ""./UploadPanelErrors.vue"";
+import UploadPanelName from ""./UploadPanelName.vue"";
+
+const props = defineProps<FilePanelProps>();
+
+const variantOptions = computed(() =>
+  props.index === 0 ? uploadPanelOptions() : uploadPanelOptions().slice(0, 2)
+);
+
+const label = computed(
+  () =>
+    ({
+      artifact: ""Artifact Type"",
+      trace: ""Trace Matrix"",
+      bulk: ""Bulk Upload"",
+      github: ""GitHub Import"",
+      jira: ""Jira Import"",
+    })[props.panel.variant]
+);
+const newLabel = computed(() => `New ${label.value}`);
+
+const valid = computed(() => !props.panel.errorMessage);
+
+const headerClass = computed(() =>
+  valid.value ? ""text-positive"" : ""text-negative""
+);
+
+const iconId = computed(() =>
+  valid.value ? getIcon(""success"") : getIcon(""error"")
+);
+
+const hasSingleFile = computed(
+  () =>
+    (props.panel.variant === ""artifact"" || props.panel.variant === ""trace"") &&
+    !props.panel.isGenerated
+);
+const hasBulkFiles = computed(
+  () => props.panel.variant === ""bulk"" && !props.panel.emptyFiles
+);
+
+/**
+ * Deletes the current file panel.
+ */
+function handleDeletePanel() {
+  projectSaveStore.removePanel(props.panel.variant, props.index);
+}
+
+// Clear the name when the variant changes.
+watch(
+  () => props.panel.variant,
+  () => {
+    props.panel.name = """";
+  }
+);
+
+// For artifact upload, set the name to the artifact type when the type changes.
+watch(
+  () => props.panel.type,
+  (type) => {
+    if (props.panel.variant === ""artifact"") {
+      props.panel.name = type;
+    }
+  }
+);
+
+// For trace upload, set the name to the artifact types when the type changes.
+watch(
+  () => [props.panel.type, props.panel.toType],
+  ([fromType, toType]) => {
+    if (props.panel.variant === ""trace"") {
+      props.panel.name =
+        !props.panel.type || !props.panel.toType
+          ? """"
+          : `${fromType} to ${toType}`;
+    }
+  }
+);
+
+// For file upload, parse uploaded files and store the parse state.
+watch(
+  () => props.panel.file,
+  (file) => {
+    if (file) {
+      parseApiStore.handleParseProjectFile(
+        props.panel,
+        projectSaveStore.artifactMap
+      );
+    } else {
+      props.panel.artifacts = [];
+      props.panel.traces = [];
+      props.panel.itemNames = [];
+      props.panel.errorMessage = undefined;
+    }
+  }
+);
+
+// For file upload, close the panel after successful upload.
+watch(
+  () => props.panel.loading,
+  () => {
+    if (props.panel.loading || !valid.value) return;
+
+    props.panel.open = false;
+  }
+);
+</script>
+",Code,"The ""UploadPanel"" component in this code provides users with a comprehensive interface for managing file uploads and artifacts within a software project. Users can select from a variety of upload types, including single artifacts, trace matrices, bulk uploads, and integrations with GitHub or Jira. The component offers a range of configuration options, such as setting the upload name, attaching files, and enabling advanced features like artifact summaries or trace link generation.
+
+The component's design emphasizes user feedback and validation, with visual cues indicating the validity of the user's input. Users can also delete individual upload panels as needed, and the component's state is carefully managed to ensure a seamless and intuitive user experience.
+
+Overall, the ""UploadPanel"" component empowers users to efficiently and effectively manage the file and artifact upload process within their software project, providing a flexible and feature-rich interface that adapts to their specific needs.",
+components/project/creator/upload/UploadPanelList.vue,"<template>
+  <div>
+    <list :bordered=""panels.length > 0"" class=""q-mb-lg"">
+      <upload-panel
+        v-for=""(panel, idx) in panels""
+        :key=""idx""
+        :panel=""panel""
+        :index=""idx""
+      >
+        <template #panel>
+          <slot name=""panel"" :panel=""panel"" />
+        </template>
+      </upload-panel>
+    </list>
+
+    <flex-box justify=""center"">
+      <text-button
+        v-if=""allowMultiple""
+        text
+        icon=""add""
+        label=""New Upload""
+        data-cy=""button-add-panel""
+        @click=""handleAddPanel""
+      />
+    </flex-box>
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * Provides inputs for uploading files.
+ */
+export default {
+  name: ""UploadPanelList"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { projectSaveStore } from ""@/hooks"";
+import { TextButton, FlexBox, List } from ""@/components/common"";
+import UploadPanel from ""./UploadPanel.vue"";
+
+const panels = computed(() => projectSaveStore.uploadPanels);
+
+// Only allow multiple uploads when uploading individual files.
+const allowMultiple = computed(() =>
+  panels.value.reduce(
+    (acc, { variant }) =>
+      acc && (variant === ""artifact"" || variant === ""trace""),
+    true
+  )
+);
+
+/**
+ * Adds a new panel.
+ */
+function handleAddPanel(): void {
+  projectSaveStore.addPanel(""artifact"");
+}
+</script>
+",Code,"This code provides a user interface for uploading files to a project. The main feature is a list of ""upload panels"" where each panel represents a file that can be uploaded. The user can add new panels to the list, up to a certain limit determined by the system. This limit is based on the type of files being uploaded, allowing multiple panels for ""artifact"" or ""trace"" variants but restricting the number of panels for other file types.
+
+The code uses a centralized store, the ""projectSaveStore,"" to manage the list of upload panels, which are displayed in the ""UploadPanelList"" component. Each panel is rendered using the ""UploadPanel"" component, which allows the user to interact with the panel through a provided slot. Additionally, the code includes a ""TextButton"" component that allows the user to add a new panel by clicking the ""New Upload"" button, but this button is only displayed when the system allows for additional panels.
+
+Overall, this code provides a user-friendly interface for managing file uploads to a project, with features like panel management and type-based restrictions to ensure a smooth and organized upload process.",
+components/artifact/display/ArtifactNameDisplay.vue,"<template>
+  <flex-box align=""center"" justify=""between"" class=""overflow-hidden"">
+    <flex-box column full-width>
+      <typography
+        v-if=""splitLines""
+        variant=""caption""
+        :value=""codePath""
+        ellipsis
+        :align=""props.align""
+        :class=""codePathClass""
+      />
+      <typography
+        :align=""props.align""
+        :class=""splitLines ? 'full-width text-word-break-all' : 'full-width'""
+        :el=""props.isHeader ? 'h1' : undefined""
+        :variant=""props.isHeader ? 'subtitle' : undefined""
+        :value=""displayName""
+        ellipsis
+        :data-cy=""props.dataCyName""
+      />
+      <q-tooltip v-if=""props.displayTooltip"">
+        {{ props.artifact.name }}
+      </q-tooltip>
+    </flex-box>
+    <attribute-chip
+      v-if=""props.displayType""
+      artifact-type
+      :value=""artifactType""
+      :data-cy=""props.dataCyType""
+    />
+  </flex-box>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the name, code path, and type of an artifact.
+ */
+export default {
+  name: ""ArtifactNameDisplay"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { ArtifactNameDisplayProps } from ""@/types"";
+import { timStore } from ""@/hooks"";
+import { FlexBox, Typography, AttributeChip } from ""@/components/common"";
+
+const props = defineProps<ArtifactNameDisplayProps>();
+
+const artifactType = computed(() => timStore.getTypeName(props.artifact.type));
+
+const splitLines = computed(
+  () => props.artifact.isCode || props.artifact.name.includes(""/"")
+);
+
+const codePath = computed(() =>
+  splitLines.value
+    ? props.artifact.name.split(""/"").slice(0, -1).join(""/"")
+    : undefined
+);
+
+const codePathClass = computed(
+  () => ""full-width "" + (props.dense ? ""text-no-wrap"" : ""text-word-break-all"")
+);
+
+const displayName = computed(() =>
+  splitLines.value ? props.artifact.name.split(""/"").pop() : props.artifact.name
+);
+</script>
+",Code,"This Vue.js component provides a user interface for displaying information about an artifact, such as its name, code path, and type. The component takes in several props to configure its behavior, including the artifact object, alignment, whether the artifact is a header, and whether to display a tooltip and type chip.
+
+The component uses computed properties to derive various values from the artifact object, such as whether the artifact is code or has a name that includes a forward slash, and the artifact type. It then renders a flex-box layout with the code path, name, and type information, using various UI components like typography and attribute-chip to display the information.
+
+This component appears to be a reusable UI element that provides a consistent way to display information about an artifact, with various configuration options to control the layout and behavior. By encapsulating this functionality in a reusable component, the code can be easily integrated into other parts of the application, providing a consistent user experience for displaying artifact information.",
+components/project/save/ProjectIdentifierInput.vue,"<template>
+  <div class=""q-mx-auto long-input"">
+    <flex-box v-if=""!props.isUpdate"" b=""4"">
+      <select-input
+        v-model=""getOrgApiStore.currentOrg""
+        label=""Organization""
+        :options=""orgStore.allOrgs""
+        class=""q-mr-sm""
+        option-label=""name""
+      />
+      <select-input
+        v-model=""teamStore.team""
+        label=""Team""
+        :options=""teamStore.teamsWithCreateProject""
+        class=""full-width""
+        option-label=""name""
+      />
+    </flex-box>
+    <text-input
+      v-model=""nameText""
+      label=""Project Name""
+      hint=""Required""
+      :data-cy=""props.dataCyName""
+    />
+    <text-input
+      v-model=""descriptionText""
+      type=""textarea""
+      label=""Project Description""
+      :data-cy=""props.dataCyDescription""
+    />
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * Input fields for editing a project.
+ */
+export default {
+  name: ""ProjectIdentifierInput"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { ProjectIdentifierProps } from ""@/types"";
+import { getOrgApiStore, orgStore, teamStore, useVModel } from ""@/hooks"";
+import { FlexBox, SelectInput, TextInput } from ""@/components/common"";
+
+const props = withDefaults(defineProps<ProjectIdentifierProps>(), {
+  dataCyName: ""input-project-name"",
+  dataCyDescription: ""input-project-description"",
+});
+
+defineEmits<{
+  (e: ""update:name"", name: string): void;
+  (e: ""update:description"", description: string): void;
+}>();
+
+const nameText = useVModel(props, ""name"");
+const descriptionText = useVModel(props, ""description"");
+</script>
+",Code,"This code provides a user interface for creating or updating a project within a software system. The user can select an organization and team from a list of available options, and then enter a name and description for the project. The code uses various components and hooks to manage the state and behavior of the input fields, including retrieving and managing the organization and team data, and binding the input field values to the component's props.
+
+The user interface is designed to be intuitive and user-friendly, with clear labels and hints for the input fields. The inclusion of data-cy attributes for the name and description input fields suggests that the code is part of a larger testing framework, allowing for automated testing of the project creation and update functionality.
+
+Overall, this code provides a valuable tool for users to create and update projects within the software system, with a well-designed and responsive user interface that simplifies the process and ensures data accuracy.",
+components/artifact/table/ArtifactTableRowActions.vue,"<template>
+  <flex-box>
+    <icon-button
+      icon=""view-tree""
+      :tooltip=""`View artifacts related to '${artifact.name}'`""
+      data-cy=""button-artifact-tree-icon""
+      @click=""handleOpenTree""
+    />
+    <icon-button
+      v-if=""displayActions""
+      icon=""trace""
+      :rotate=""-90""
+      :tooltip=""`Add parent to '${artifact.name}'`""
+      data-cy=""button-artifact-parent-icon""
+      @click=""handleLinkParent""
+    />
+    <icon-button
+      v-if=""displayActions""
+      icon=""trace""
+      :rotate=""90""
+      :tooltip=""`Add child to '${artifact.name}'`""
+      data-cy=""button-artifact-child-icon""
+      @click=""handleLinkChild""
+    />
+    <icon-button
+      v-if=""displayActions""
+      icon=""edit""
+      :tooltip=""`Edit '${artifact.name}'`""
+      data-cy=""button-artifact-edit-icon""
+      @click=""handleEdit""
+    />
+    <icon-button
+      v-if=""displayActions""
+      icon=""delete""
+      :tooltip=""`Delete '${artifact.name}'`""
+      data-cy=""button-artifact-delete-icon""
+      @click=""handleDelete""
+    />
+  </flex-box>
+</template>
+
+<script lang=""ts"">
+/**
+ * Represents actions for an artifact.
+ */
+export default {
+  name: ""ArtifactTableRowActions"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { ArtifactProps } from ""@/types"";
+import {
+  artifactApiStore,
+  artifactSaveStore,
+  layoutStore,
+  permissionStore,
+  selectionStore,
+  traceSaveStore,
+  viewsStore,
+} from ""@/hooks"";
+import { FlexBox, IconButton } from ""@/components/common"";
+
+const props = defineProps<ArtifactProps>();
+
+const displayActions = computed(() =>
+  permissionStore.isAllowed(""project.edit_data"")
+);
+
+/**
+ * Opens the edit artifact window.
+ */
+function handleEdit() {
+  selectionStore.selectArtifact(props.artifact.id);
+  artifactSaveStore.openPanel({
+    isNewArtifact: false,
+  });
+}
+
+/**
+ * Opens the delete artifact window.
+ */
+function handleDelete() {
+  artifactApiStore.handleDelete(props.artifact);
+}
+
+/**
+ * Opens tree view with the current artifact selected.
+ */
+function handleOpenTree(): void {
+  viewsStore.addDocumentOfNeighborhood(props.artifact);
+  layoutStore.mode = ""tree"";
+}
+
+/**
+ * Opens the create trace link panel with this artifact as the child.
+ */
+function handleLinkParent(): void {
+  traceSaveStore.openPanel({
+    type: ""source"",
+    artifactId: props.artifact.id,
+  });
+}
+
+/**
+ * Opens the create trace link panel with this artifact as the parent.
+ */
+function handleLinkChild(): void {
+  traceSaveStore.openPanel({
+    type: ""target"",
+    artifactId: props.artifact.id,
+  });
+}
+</script>
+",Code,"This code provides a user interface component that allows users to interact with and manage artifacts within a larger software system. The component presents a set of icon buttons that enable various actions, such as viewing the artifacts related to the current one, adding parent or child relationships, editing the artifact, and deleting it. These actions are made available based on the user's permissions, as determined by a computed property called ""displayActions"".
+
+The ability to view the artifact tree and establish hierarchical relationships between artifacts suggests a system that models complex relationships and dependencies between different components or entities. The edit and delete functionality allows users to maintain and update the artifact information as needed. By providing these capabilities, the code empowers users to effectively manage and navigate the artifacts within the software system, supporting their development and maintenance tasks.",
+components/graph/artifact/ArtifactNodeDisplay.vue,"<template>
+  <node-display
+    separator
+    :color=""props.color""
+    variant=""artifact""
+    :title=""props.artifact.type""
+    :selected=""props.selected""
+    @click=""handleSelect""
+    @dblclick=""handleSelect(true)""
+  >
+    <artifact-name-display
+      align=""center""
+      :artifact=""props.artifact""
+      is-header
+      dense
+      class=""cy-node-artifact-name""
+      data-cy=""tree-node-name""
+    />
+    <separator
+      v-if=""showDelta""
+      :color=""props.deltaColor""
+      class=""cy-node-delta-chip""
+    />
+  </node-display>
+</template>
+
+<script lang=""ts"">
+/**
+ * Renders the identifying content of an artifact node in the graph.
+ */
+export default {
+  name: ""ArtifactNodeDisplay"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { ArtifactNodeDisplayProps } from ""@/types"";
+import { deltaStore, selectionStore, viewsStore } from ""@/hooks"";
+import { NodeDisplay } from ""@/components/graph/display"";
+import { Separator } from ""@/components/common"";
+import { ArtifactNameDisplay } from ""@/components/artifact"";
+
+const props = defineProps<Omit<ArtifactNodeDisplayProps, ""hiddenChildren"">>();
+
+const id = computed(() => props.artifact.id);
+const showDelta = computed(() => deltaStore.inDeltaView);
+
+/**
+ * Selects an artifact and highlights its subtree,
+ * or opens a new view of the artifact's subtree if the artifact is already selected.
+ */
+function handleSelect(selected = props.selected): void {
+  if (!selected) {
+    selectionStore.selectArtifact(id.value);
+  } else {
+    viewsStore.addDocumentOfNeighborhood({
+      id: id.value,
+      name: props.artifact.name,
+    });
+  }
+}
+</script>
+",Code,"This code provides users with the ability to view and interact with artifact nodes within a graph-based visualization. The ArtifactNodeDisplay component renders the identifying content of an artifact node, including its type, name, and any associated delta information. Users can select an artifact node, which will highlight its subtree in the graph, or double-click on a selected node to open a new view of the artifact's subtree. The code leverages various components and stores to manage the state and behavior of the artifact nodes, such as the NodeDisplay component for rendering the nodes, the ArtifactNameDisplay component for displaying the artifact names, and the deltaStore and selectionStore for managing delta information and selection state. The integration with the viewsStore allows users to easily navigate and explore the artifact nodes within the larger graph-based visualization.",
+components/project/creator/UploadNewVersion.vue,"<template>
+  <panel-card
+    title=""Data File Upload""
+    subtitle=""Select files to upload to the current project version.""
+  >
+    <project-files-input v-model=""files"" data-cy=""input-files-version"" />
+    <switch-input v-model=""replaceAllArtifacts"" label=""Replace all artifacts"" />
+    <template #actions>
+      <text-button
+        block
+        :disabled=""!files || files.length === 0""
+        label=""Upload Project Files""
+        color=""primary""
+        data-cy=""button-upload-files""
+        @click=""handleSubmit""
+      />
+    </template>
+  </panel-card>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays inputs for uploading a new version.
+ */
+export default {
+  name: ""UploadNewVersion"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { ref, watch } from ""vue"";
+import { OpenableProps } from ""@/types"";
+import { createVersionApiStore, projectStore } from ""@/hooks"";
+import { SwitchInput, PanelCard, TextButton } from ""@/components/common"";
+import { ProjectFilesInput } from ""@/components/project/save"";
+
+const props = defineProps<OpenableProps>();
+
+const files = ref<File[]>([]);
+const replaceAllArtifacts = ref(false);
+
+/**
+ * Resets component data.
+ */
+function handleReset() {
+  createVersionApiStore.handleReset();
+  files.value = [];
+  replaceAllArtifacts.value = false;
+}
+
+/**
+ * Uploads a new project version.
+ */
+function handleSubmit() {
+  createVersionApiStore
+    .handleImport(
+      projectStore.projectId,
+      projectStore.versionId,
+      files.value,
+      true,
+      replaceAllArtifacts.value
+    )
+    .then(() => handleReset());
+}
+
+watch(
+  () => props.open,
+  (open) => {
+    if (!open) return;
+
+    handleReset();
+  }
+);
+</script>
+",Code,"This code provides a user interface for uploading a new version of a project to the current project version. The user can select one or more files to upload and optionally choose to replace all existing artifacts. When the user clicks the ""Upload Project Files"" button, the code handles the submission of the selected files and the ""Replace all artifacts"" option to the server using the createVersionApiStore and projectStore hooks. If the user has not selected any files, the button is disabled. Once the upload is complete, the component's data is reset, allowing the user to start a new upload process. The code also includes a watch function that resets the component's data when the ""open"" prop changes to true, enabling the user to start a new upload session.",
+components/project/panel/ProjectOverviewPanel.vue,"<template>
+  <details-panel panel=""displayProject"" data-cy=""panel-artifact-type"">
+    <project-overview-display hide-title />
+  </details-panel>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the project overview panel.
+ */
+export default {
+  name: ""ProjectOverviewPanel"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { DetailsPanel } from ""@/components/common"";
+import { ProjectOverviewDisplay } from ""@/components/project/editor"";
+</script>
+",Code,"Users can access a project overview panel within a details panel component through this code. The details panel component manages the display and visibility of the project overview panel, which is a reusable UI component that provides information about a specific project. The project overview panel is displayed without a title, as indicated by the ""hide-title"" prop. This functionality allows users to view and interact with the project overview details as part of a larger application or system. The code imports the necessary components, DetailsPanel and ProjectOverviewDisplay, to create this user experience, with the DetailsPanel component handling the display and visibility of the panel, and the ProjectOverviewDisplay component rendering the actual project overview information.",
+components/artifact/display/ArtifactBodyDisplay.vue,"<template>
+  <list-item
+    dense
+    :clickable=""props.clickable""
+    :divider=""props.displayDivider""
+    :class=""props.fullWidth ? 'full-width' : 'artifact-display'""
+    @click=""emit('click')""
+  >
+    <artifact-name-display
+      v-if=""props.displayTitle""
+      :artifact=""props.artifact""
+      display-type
+    />
+    <template #subtitle>
+      <typography
+        v-if=""showSummary""
+        variant=""expandable""
+        :value=""props.artifact.summary""
+        :default-expanded=""props.defaultExpanded""
+        :collapse-length=""props.defaultExpanded ? 0 : undefined""
+      />
+      <typography
+        v-else
+        :variant=""bodyVariant""
+        :value=""props.artifact.body""
+        :default-expanded=""props.defaultExpanded""
+      />
+    </template>
+  </list-item>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the body of an artifact that can be expanded.
+ */
+export default {
+  name: ""ArtifactBodyDisplay"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { ArtifactListItemProps } from ""@/types"";
+import { Typography, ListItem } from ""@/components/common"";
+import ArtifactNameDisplay from ""./ArtifactNameDisplay.vue"";
+
+const props = defineProps<ArtifactListItemProps>();
+
+const emit = defineEmits<{
+  /**
+   * Called when clicked.
+   */
+  (e: ""click""): void;
+}>();
+
+const showSummary = computed(() => !!props.artifact?.summary);
+const isCode = computed(() => props.artifact.isCode);
+const bodyVariant = computed(() => (isCode.value ? ""code"" : ""expandable""));
+</script>
+",Code,"This code provides a user interface component that displays the body of an artifact, such as an item or piece of content, within a list. The component allows the user to view a summary of the artifact's content, and optionally expand it to see the full body. The component is designed to be used within a list of artifacts, and can be configured to be clickable and display a divider between items.
+
+The component uses several other UI components to handle the layout, appearance, and content display of the list item. It also emits a ""click"" event that can be used to handle user interactions, such as navigating to a detailed view of the artifact. The component has several configurable properties that allow it to be customized to fit the needs of the larger software system, including whether the item is clickable, whether a divider should be displayed, whether the item should be displayed at full width, whether the title should be displayed, and whether the summary or full body text should be displayed by default.",
+components/artifact/display/ArtifactContentDisplay.vue,"<template>
+  <q-splitter v-if=""showSummary"" v-model=""splitterModel"" :horizontal=""!isCode"">
+    <template #before>
+      <div class=""q-mr-md"">
+        <typography variant=""caption"" value=""Summary"" />
+        <typography
+          variant=""expandable""
+          :value=""props.artifact.summary""
+          default-expanded
+          :collapse-length=""0""
+        />
+      </div>
+    </template>
+    <template #after>
+      <div class=""q-ml-md"">
+        <typography variant=""caption"" value=""Content"" />
+        <typography
+          :variant=""isCode ? 'code' : 'expandable'""
+          :value=""props.artifact.body""
+          :default-expanded=""!isCode""
+          :code-ext=""props.artifact.name.split('.').pop()""
+          :collapse-length=""isCode ? undefined : 0""
+        />
+      </div>
+    </template>
+  </q-splitter>
+  <div v-else>
+    <typography variant=""caption"" value=""Content"" />
+    <typography
+      :variant=""isCode ? 'code' : 'expandable'""
+      :value=""props.artifact.body""
+      :default-expanded=""!isCode""
+      :code-ext=""props.artifact.name.split('.').pop()""
+      :collapse-length=""isCode ? undefined : 0""
+    />
+  </div>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays both the body and summary of an artifact.
+ * If no summary exists, only the artifact body is displayed.
+ */
+export default {
+  name: ""ArtifactContentDisplay"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, ref } from ""vue"";
+import { ArtifactProps } from ""@/types"";
+import { Typography } from ""@/components/common"";
+
+const props = defineProps<ArtifactProps>();
+
+const splitterModel = ref(40);
+
+const showSummary = computed(() => !!props.artifact.summary);
+const isCode = computed(() => props.artifact.isCode);
+</script>
+",Code,"This code provides a user interface component that displays the content of an artifact, allowing users to easily switch between viewing the summary and the full body of the artifact. The component uses a splitter to divide the display into two sections, one for the summary and one for the content.
+
+If a summary exists for the artifact, it is displayed in the left section of the splitter, with a caption indicating that it is the summary. The summary is displayed using an expandable typography component, which allows the user to expand or collapse the summary text. In the right section of the splitter, the full content of the artifact is displayed. If the artifact is a code file, the content is displayed using a code typography component, which formats the text to look like code. If the artifact is not a code file, the content is displayed using an expandable typography component.
+
+If no summary exists for the artifact, the component displays only the full content of the artifact, without the splitter. The content is displayed using the same typography components as in the splitter case.
+
+Overall, this component provides a user-friendly way to display the content of an artifact, with the ability to easily switch between the summary and the full content. The use of the splitter and the expandable/code typography components makes the display easy to navigate and understand, allowing users to quickly access the information they need.",
+components/artifact/panel/ArtifactGenerationPanel.vue,"<template>
+  <details-panel panel=""generateArtifact"">
+    <panel-card>
+      <q-btn-group flat class=""q-mb-md"">
+        <text-button
+          v-bind=""buttonProps('single')""
+          label=""Single""
+          icon=""artifact""
+          @click=""mode = 'single'""
+        />
+        <text-button
+          v-bind=""buttonProps('multiple')""
+          label=""Multiple""
+          icon=""nav-artifact""
+          @click=""mode = 'multiple'""
+        />
+      </q-btn-group>
+
+      <div v-if=""mode === 'single'"" class=""q-mb-md"">
+        <artifact-input
+          v-model=""childArtifactIds""
+          multiple
+          label=""Child Artifacts""
+          hint=""Generate a single parent artifact for these artifacts.""
+        />
+      </div>
+      <div v-else class=""q-mb-md"">
+        <artifact-type-input
+          v-model=""childArtifactTypes""
+          multiple
+          label=""Child Artifact Types""
+          hint=""Generate multiple parent artifacts by clustering these types of artifacts by functionality.""
+        />
+      </div>
+      <multiselect-input
+        v-model=""parentArtifactTypes""
+        :options=""ARTIFACT_GENERATION_OPTIONS""
+        label=""Parent Artifact Types""
+        hint=""The type of parent artifacts to create. If multiple are selected, each type will be sequentially generated based on the past type.""
+      />
+
+      <flex-box full-width justify=""end"" t=""3"">
+        <text-button
+          :disabled=""!canGenerate""
+          :loading=""artifactGenerationApiStore.artifactGenLoading""
+          label=""Generate""
+          color=""primary""
+          @click=""handleGenerate""
+        />
+      </flex-box>
+    </panel-card>
+  </details-panel>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays inputs for generating new parent artifacts based on child artifacts.
+ */
+export default {
+  name: ""ArtifactGenerationPanel"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, ref, watch } from ""vue"";
+import { GenerateArtifactSchema } from ""@/types"";
+import { ARTIFACT_GENERATION_OPTIONS } from ""@/util"";
+import {
+  appStore,
+  artifactGenerationApiStore,
+  artifactStore,
+  selectionStore,
+} from ""@/hooks"";
+import {
+  DetailsPanel,
+  PanelCard,
+  FlexBox,
+  TextButton,
+  ArtifactInput,
+  ArtifactTypeInput,
+  MultiselectInput,
+} from ""@/components/common"";
+
+const mode = ref<""single"" | ""multiple"">(""single"");
+const childArtifactIds = ref<string[]>([]);
+const childArtifactTypes = ref<string[]>([]);
+const parentArtifactTypes = ref<string[]>([]);
+
+const canGenerate = computed(() => {
+  if (mode.value === ""single"") {
+    return (
+      childArtifactIds.value.length > 0 && parentArtifactTypes.value.length > 0
+    );
+  } else {
+    return (
+      childArtifactTypes.value.length > 0 &&
+      parentArtifactTypes.value.length > 0
+    );
+  }
+});
+
+/**
+ * Returns props for a mode button.
+ * @param option - The mode button to get props for.
+ */
+function buttonProps(option: ""single"" | ""multiple"") {
+  const selected = mode.value === option;
+
+  return {
+    text: !selected,
+    outlined: selected,
+    color: ""primary"",
+    class: selected ? ""nav-mode-selected"" : """",
+  };
+}
+
+/**
+ * Clears all input fields.
+ */
+function handleReset(): void {
+  if (selectionStore.selectedGroupIds.length > 0) {
+    mode.value = ""single"";
+    childArtifactIds.value = selectionStore.selectedGroupIds;
+    childArtifactTypes.value = [];
+  } else if (selectionStore.selectedArtifactLevel) {
+    mode.value = ""multiple"";
+    childArtifactTypes.value = [selectionStore.selectedArtifactLevel.name];
+    childArtifactIds.value = [];
+  } else {
+    mode.value = ""single"";
+    childArtifactIds.value = [];
+    childArtifactTypes.value = [];
+  }
+
+  parentArtifactTypes.value = [];
+}
+
+/**
+ * Generates new parent artifacts based on inputted child artifacts.
+ */
+function handleGenerate(): void {
+  const config: GenerateArtifactSchema =
+    mode.value === ""single""
+      ? {
+          artifacts: childArtifactIds.value,
+          targetTypes: parentArtifactTypes.value,
+          clusters: [childArtifactIds.value],
+        }
+      : {
+          artifacts: artifactStore.allArtifacts
+            .filter(({ type }) => childArtifactTypes.value.includes(type))
+            .map(({ id }) => id),
+          targetTypes: parentArtifactTypes.value,
+        };
+
+  artifactGenerationApiStore.handleGenerateArtifacts(config, {
+    onSuccess: () => {
+      handleReset();
+      appStore.closeSidePanels();
+    },
+  });
+}
+watch(
+  () => appStore.popups.detailsPanel === ""generateArtifact"",
+  (openState) => {
+    if (!openState) return;
+
+    handleReset();
+  }
+);
+</script>
+",Code,"This code provides users with the ability to generate new parent artifacts based on their selection of child artifacts or child artifact types. Users can choose to generate a single parent artifact for a set of selected child artifacts, or they can opt to generate multiple parent artifacts by clustering child artifacts of specific types. The code includes various input components that allow users to easily select the necessary information, and a ""Generate"" button that initiates the artifact generation process. Once the generation is complete, the code resets the input fields and closes the side panel, providing a seamless user experience. The code also includes a watch function that ensures the input fields are reset when the ""generateArtifact"" details panel is closed, further enhancing the usability of the system.",
+components/graph/artifact/TraceLink.vue,"<template>
+  <cy-element :definition=""definition"" @click=""handleSelect"" />
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays trace link edges between artifacts.
+ */
+export default {
+  name: ""TraceLink"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import {
+  GraphElementType,
+  GraphMode,
+  TraceCytoElement,
+  TraceLinkProps,
+} from ""@/types"";
+import { deltaStore, selectionStore, useTheme } from ""@/hooks"";
+import { CyElement } from ""@/components/graph/base"";
+
+const props = defineProps<TraceLinkProps>();
+
+const { darkMode } = useTheme();
+
+const faded = computed(
+  () =>
+    !props.artifactsInView.includes(props.trace.targetId) ||
+    !props.artifactsInView.includes(props.trace.sourceId)
+);
+
+const definition = computed<TraceCytoElement>(() => ({
+  data: {
+    type: GraphElementType.edge,
+    graph: ""tree"" as GraphMode,
+    id: props.trace.traceLinkId,
+
+    // Reversed to show arrow toward parent.
+    source: props.trace.targetId,
+    target: props.trace.sourceId,
+
+    deltaType: deltaStore.inDeltaView
+      ? deltaStore.getTraceDeltaType(props.trace.traceLinkId)
+      : undefined,
+    faded: faded.value,
+    traceType: props.trace.traceType,
+    approvalStatus: props.trace.approvalStatus,
+    score: props.trace.score,
+    dark: darkMode.value,
+  },
+  classes: props.trace.sourceId === props.trace.targetId ? ""loop"" : """",
+}));
+
+/**
+ * Selects this trace link.
+ */
+function handleSelect(): void {
+  selectionStore.selectTraceLink(props.trace);
+}
+</script>
+",Code,"This code provides users with the ability to visualize and interact with trace links between artifacts in a graphical user interface. The ""TraceLink"" component renders a graphical element representing a trace link, with the visual properties of the element determined by the trace link's details and the current state of the application (e.g., whether the source and target artifacts are in view, the current theme). When the user clicks on a trace link, the component notifies a central ""selectionStore"" that the link has been selected, allowing other parts of the application to respond to the user's interaction. By providing this functionality, the code enables users to easily navigate and understand the relationships between different artifacts within the system.",
+components/artifact/save/ArtifactButtons.vue,"<template>
+  <flex-box b=""2"">
+    <text-button
+      text
+      label=""View Content""
+      icon=""code""
+      data-cy=""button-artifact-body""
+      @click=""handleViewBody""
+    />
+    <text-button
+      v-if=""displayActions""
+      text
+      label=""Edit""
+      icon=""edit""
+      data-cy=""button-artifact-edit""
+      @click=""handleEdit""
+    />
+    <separator vertical />
+    <text-button
+      v-if=""displayActions""
+      text
+      :loading=""artifactApiStore.deleteLoading""
+      label=""Delete""
+      icon=""delete""
+      data-cy=""button-artifact-delete""
+      @click=""handleDelete""
+    />
+  </flex-box>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays artifact buttons.
+ */
+export default {
+  name: ""ArtifactButtons"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import {
+  appStore,
+  artifactApiStore,
+  artifactSaveStore,
+  permissionStore,
+  selectionStore,
+} from ""@/hooks"";
+import { FlexBox, TextButton, Separator } from ""@/components/common"";
+
+const displayActions = computed(() =>
+  permissionStore.isAllowed(""project.edit_data"")
+);
+
+const artifact = computed(() => selectionStore.selectedArtifact);
+
+/**
+ * Attempts to delete the selected artifact.
+ */
+function handleDelete(): void {
+  if (!artifact.value) return;
+
+  artifactApiStore.handleDelete(artifact.value!, {
+    onSuccess: () => appStore.closeSidePanels(),
+  });
+}
+
+/**
+ * Opens the artifact creator.
+ */
+function handleEdit(): void {
+  artifactSaveStore.openPanel({});
+}
+
+/**
+ * Opens the artifact body display.
+ */
+function handleViewBody(): void {
+  appStore.openDetailsPanel(""displayArtifactBody"");
+}
+</script>
+",Code,"This code provides users with a set of interactive buttons to manage an artifact within the software system. Users can view the content of the artifact, edit its details if they have the necessary permissions, or delete the artifact entirely. The code leverages various reusable components, such as `FlexBox`, `TextButton`, and `Separator`, to create a clean and organized user interface. The behavior of the buttons is driven by the state and functionality provided by several stores, including `appStore`, `artifactApiStore`, `artifactSaveStore`, `permissionStore`, and `selectionStore`. This allows the user to seamlessly interact with the artifact, with the system handling the underlying logic and data management.",
+components/artifact/display/ArtifactContent.vue,"<template>
+  <panel-card>
+    <artifact-name-display
+      v-if=""artifact""
+      :artifact=""artifact""
+      display-type
+      display-tooltip
+      is-header
+      data-cy-name=""text-selected-name""
+      data-cy-type=""text-selected-type""
+    />
+
+    <separator b=""2"" t=""1"" />
+
+    <typography variant=""caption"" value=""Body"" />
+    <typography
+      default-expanded
+      :collapse-length=""0""
+      :variant=""variant""
+      :value=""body""
+      data-cy=""text-selected-body""
+    />
+
+    <artifact-summary />
+
+    <attribute-list-display v-if=""!!artifact"" :artifact=""artifact"" />
+  </panel-card>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the selected node's title and option buttons.
+ */
+export default {
+  name: ""ArtifactContent"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { selectionStore } from ""@/hooks"";
+import {
+  Typography,
+  PanelCard,
+  AttributeListDisplay,
+  Separator,
+} from ""@/components/common"";
+import { ArtifactSummary } from ""@/components/artifact/save"";
+import ArtifactNameDisplay from ""./ArtifactNameDisplay.vue"";
+
+const artifact = computed(() => selectionStore.selectedArtifact);
+const body = computed(() => artifact.value?.body.trim() || """");
+const isCode = computed(() => !!artifact.value?.isCode);
+const variant = computed(() => (isCode.value ? ""code"" : ""expandable""));
+</script>
+",Code,"This code provides a user interface component that allows users to view and interact with a selected artifact. The component displays the name, type, and body or content of the artifact, as well as any associated attributes. If the artifact is code, the body is displayed in a code-specific format, while non-code artifacts are displayed in an expandable format. The component also includes an artifact summary section that provides additional details about the selected artifact.
+
+The component is designed to be flexible and adaptable, allowing users to quickly and easily access the key details and content of the artifact. The consistent and intuitive user experience provided by this component helps users efficiently navigate and understand the artifacts within the software system.",
+components/project/selector/input/VersionSelector.vue,"<template>
+  <q-select
+    v-if=""isProjectDefined""
+    v-model=""getVersionApiStore.currentVersion""
+    standout
+    bg-color=""transparent""
+    class=""nav-breadcrumb""
+    options-selected-class=""primary""
+    label=""Version""
+    :options=""allVersions""
+    option-value=""versionId""
+    @popup-show=""getVersionApiStore.handleReload""
+  >
+    <template #selected>
+      {{ versionToString(getVersionApiStore.currentVersion) }}
+    </template>
+    <template #option=""{ opt, itemProps }"">
+      <list-item
+        v-bind=""itemProps""
+        :title=""versionToString(opt)""
+        :action-cols=""2""
+      >
+        <template #actions>
+          <flex-box justify=""end"">
+            <icon-button
+              v-if=""deletable""
+              small
+              :tooltip=""`Delete ${versionToString(opt)}`""
+              icon=""delete""
+              data-cy=""button-version-delete""
+              @click=""handleDelete(opt)""
+            />
+          </flex-box>
+        </template>
+      </list-item>
+    </template>
+    <template #after-options>
+      <text-button
+        v-if=""displayActions""
+        text
+        label=""Add Version""
+        icon=""add""
+        @click=""openCreateVersion = true""
+      />
+    </template>
+    <template #after>
+      <create-version-modal
+        :open=""openCreateVersion""
+        :project=""project""
+        @close=""openCreateVersion = false""
+        @create=""handleVersionCreated""
+      />
+    </template>
+  </q-select>
+</template>
+
+<script lang=""ts"">
+/**
+ * Displays the current project version, and allows it to be changed.
+ */
+export default {
+  name: ""VersionSelector"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed, ref } from ""vue"";
+import { VersionSchema } from ""@/types"";
+import { versionToString } from ""@/util"";
+import {
+  getVersionApiStore,
+  permissionStore,
+  projectApiStore,
+  projectStore,
+} from ""@/hooks"";
+import { TextButton, ListItem, IconButton, FlexBox } from ""@/components/common"";
+import { CreateVersionModal } from ""@/components/project/creator"";
+
+const openCreateVersion = ref(false);
+
+const allVersions = computed(() => getVersionApiStore.allVersions);
+const project = computed(() => projectStore.project);
+const isProjectDefined = computed(() => projectStore.isProjectDefined);
+
+const displayActions = computed(() =>
+  permissionStore.isAllowed(""project.edit_versions"")
+);
+const deletable = computed(
+  () => displayActions.value && allVersions.value.length > 1
+);
+
+/**
+ * Adds the new version the version list and loads that version.
+ * @param version - The new version.
+ */
+async function handleVersionCreated(version: VersionSchema): Promise<void> {
+  openCreateVersion.value = false;
+  await getVersionApiStore.handleLoad(version.versionId);
+}
+
+/**
+ * Attempts to delete the version.
+ * @param version - The version to delete.
+ */
+function handleDelete(version: VersionSchema) {
+  projectApiStore.handleDeleteVersion(version, {
+    onSuccess: async () => getVersionApiStore.handleReload(),
+  });
+}
+</script>
+",Code,"This code provides a version selector that allows users to view, select, create, and delete versions of a project. The version selector is displayed as a dropdown menu, showing the currently selected version. Users can click on the dropdown to see a list of all available versions, which are displayed as list items. Each list item includes the version string, and if the user has the necessary permissions, a delete button to remove the version.
+
+The code also includes a ""Create Version"" button, which opens a modal dialog to allow users to create a new version of the project. When a new version is created, it is added to the list of available versions, and the current version is automatically set to the new version. The code also includes logic to handle reloading the list of versions when the version selector is opened, and to prevent the deletion of the last remaining version.
+
+Overall, this code provides a user-friendly interface for managing the versions of a project, allowing users to easily view, select, create, and delete versions as needed.",
+components/graph/artifact/ArtifactNodeFooter.vue,"<template>
+  <node-display
+    v-if=""showHiddenChildren""
+    :color=""props.color""
+    variant=""footer""
+    :selected=""props.selected""
+    @click=""viewsStore.extendDocumentSubtree(props.artifact)""
+    @mousedown.stop
+    @mouseup.stop
+  >
+    <flex-box align=""center"" justify=""center"" :class=""deltaClassName"">
+      <icon variant=""down"" size=""sm"" />
+      <typography :value=""hiddenChildrenLabel"" />
+    </flex-box>
+    <flex-box v-if=""showDelta"" class=""cy-node-delta-chip"">
+      <separator
+        v-for=""childColor in childDeltaColors""
+        :key=""childColor""
+        :color=""childColor""
+        class=""cy-node-delta-child-chip""
+      />
+    </flex-box>
+    <q-tooltip :delay=""300"">Show children</q-tooltip>
+  </node-display>
+</template>
+
+<script lang=""ts"">
+/**
+ * Renders the footer of an artifact node in the graph, when child artifacts are hidden.
+ */
+export default {
+  name: ""ArtifactNodeFooter"",
+};
+</script>
+
+<script setup lang=""ts"">
+import { computed } from ""vue"";
+import { ArtifactNodeDisplayProps } from ""@/types"";
+import { getEnumColor } from ""@/util"";
+import { deltaStore, viewsStore } from ""@/hooks"";
+import { NodeDisplay } from ""@/components/graph/display"";
+import { FlexBox, Icon, Typography, Separator } from ""@/components/common"";
+
+const props = defineProps<Omit<ArtifactNodeDisplayProps, ""deltaColor"">>();
+
+const hiddenChildrenLabel = computed(() =>
+  props.hiddenChildren.length === 1
+    ? ""1 Hidden""
+    : `${props.hiddenChildren.length} Hidden`
+);
+const showHiddenChildren = computed(() => props.hiddenChildren.length > 0);
+
+const hiddenChildDeltaStates = computed(() =>
+  deltaStore.getArtifactDeltaStates(props.hiddenChildren)
+);
+const showDelta = computed(() => deltaStore.inDeltaView);
+const deltaClassName = computed(() =>
+  showDelta.value && props.hiddenChildren.length > 0
+    ? ""cy-node-delta-footer""
+    : """"
+);
+const childDeltaColors = computed(() =>
+  hiddenChildDeltaStates.value.map(getEnumColor)
+);
+</script>
+",Code,"This Vue.js component provides users with the ability to view and interact with hidden child artifacts associated with a particular artifact node in a graph. When the user clicks on the footer of the artifact node, the component triggers an event that extends the document subtree, allowing the user to see the hidden child artifacts. The component also displays visual indicators, such as the number of hidden children and the delta states of those children, to provide the user with additional context about the hidden artifacts. By interweaving the details of the component's implementation with the behavior it provides to the user, this component plays a crucial role in the overall user experience of the graph visualization system.",

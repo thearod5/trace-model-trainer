@@ -1,0 +1,19 @@
+{
+  "artifacts": [
+    {
+      "type": "Functional Requirement",
+      "fileName": "Functional Requirement.csv"
+    },
+    {
+      "type": "Code",
+      "fileName": "Code.csv"
+    }
+  ],
+  "traces": [
+    {
+      "fileName": "Code2Functional Requirement.json",
+      "sourceType": "Code",
+      "targetType": "Functional Requirement"
+    }
+  ]
+}
