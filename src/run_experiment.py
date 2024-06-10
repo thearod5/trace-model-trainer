@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
 from experiment.runner import create_experiment_dataset
@@ -7,6 +8,7 @@ from tdata.reader import read_project
 from utils import get_or_prompt
 
 if __name__ == "__main__":
+    load_dotenv()
     eval_project_path = get_or_prompt("EVAL_PROJECT_PATH", "Eval Project Path: ")
     model_name = get_or_prompt("MODEL", "Model: ")
 
