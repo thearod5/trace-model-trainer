@@ -65,7 +65,7 @@ def eval_vsm(dataset: TraceDataset, title: str = None, **kwargs):
 
 
 def calculate_metrics(trace_predictions, prefix: str = None):
-    ap_scores = calculate_map(trace_predictions)
+    map_score = calculate_map(trace_predictions)
     predictions = []
     labels = []
     for t in trace_predictions:
@@ -73,7 +73,7 @@ def calculate_metrics(trace_predictions, prefix: str = None):
         labels.append(t.label)
     tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
     metrics = {
-        "map": sum(ap_scores) / len(ap_scores),
+        "map": map_score,
         "precision": precision_score(labels, predictions),
         "recall": recall_score(labels, predictions),
         "f1": f1_score(labels, predictions),
@@ -94,14 +94,17 @@ def calculate_map(trace_predictions):
     for trace in trace_predictions:
         query2preds[trace.target].append(trace)
     ap_scores = []
+    n_missing_labels = 0
     for target, predictions in query2preds.items():
         scores = [p.score for p in predictions]
         labels = [p.label for p in predictions]
-        ap = average_precision_score(labels, scores)
-        if np.isnan(ap):
+        if 1 not in labels:
+            n_missing_labels += 1
             continue
+        ap = average_precision_score(labels, scores)
         ap_scores.append(ap)
-    return ap_scores
+    print("Number of missing labels: ", n_missing_labels)
+    return sum(ap_scores) / len(ap_scores)
 
 
 def predict_scores(model: SentenceTransformer,
