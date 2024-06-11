@@ -2,10 +2,12 @@ from collections import defaultdict
 from typing import List
 
 import numpy as np
+import torch
 from pandas import DataFrame
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, fbeta_score, precision_score, recall_score
 from sklearn.metrics.pairwise import cosine_similarity
+from transformers import AutoTokenizer
 
 from experiment.vsm import VSMController
 from tdata.trace_dataset import TraceDataset
@@ -20,7 +22,13 @@ def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None,
     device = get_device(disable_logs=disable_logs)
     model.eval()
     model.to(device)
-    trace_predictions = predict_scores(model, dataset, disable_logs=disable_logs)
+    model_type = get_model(model)
+    prediction_funcs = {
+        "st_model": predict_scores,
+        "mlm_model": get_mlm_scores,
+        "vsm": get_vsm_predictions
+    }
+    trace_predictions = prediction_funcs[model_type](model, dataset, disable_logs=disable_logs)
     metrics = calculate_metrics(trace_predictions)
 
     if print_missing_links:
@@ -36,8 +44,19 @@ def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None,
     return metrics, trace_predictions
 
 
-def eval_vsm(dataset: TraceDataset, title: str = None):
-    vsm_predictions = get_vsm_predictions(dataset)
+def get_model(model):
+    if model is None:
+        return "vsm"
+    if isinstance(model, SentenceTransformer):
+        return "st_model"
+    else:
+        return "mlm_model"
+
+
+def eval_vsm(dataset: TraceDataset, title: str = None, **kwargs):
+    vsm_controller = VSMController()
+    vsm_controller.train(dataset.artifact_map.values())
+    vsm_predictions = get_vsm_predictions(vsm_controller, dataset)
     vsm_metrics = calculate_metrics(vsm_predictions)
     if title:
         print(title)
@@ -118,11 +137,7 @@ def predict_scores(model: SentenceTransformer,
     return predictions
 
 
-def get_vsm_predictions(dataset: TraceDataset, vsm_controller: VSMController = None):
-    if vsm_controller is None:
-        vsm_controller = VSMController()
-        vsm_controller.train(dataset.artifact_map.values())
-
+def get_vsm_predictions(vsm_controller: VSMController, dataset: TraceDataset):
     predictions = []
     for source_ids, target_ids in dataset.get_layer_iterator():
         source_texts = [dataset.artifact_map[a_id] for a_id in source_ids]
@@ -143,6 +158,56 @@ def get_vsm_predictions(dataset: TraceDataset, vsm_controller: VSMController = N
                     )
                 )
     return predictions
+
+
+def get_mlm_scores(model, dataset: TraceDataset, tokenizer=None, **kwargs):
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+
+    predictions = []
+    for source_ids, target_ids in dataset.get_layer_iterator():
+        source_texts = [dataset.artifact_map[a_id] for a_id in source_ids]
+        target_texts = [dataset.artifact_map[a_id] for a_id in target_ids]
+
+        source_embeddings = get_mlm_embeddings(model, tokenizer, source_texts)
+        target_embeddings = get_mlm_embeddings(model, tokenizer, target_texts)
+        similarity_matrix = cosine_similarity(source_embeddings, target_embeddings)
+        similarity_matrix = scale(similarity_matrix)
+
+        for i, s_id in enumerate(source_ids):
+            for j, t_id in enumerate(target_ids):
+                label = get_label(dataset, s_id, t_id)
+                score = similarity_matrix[i][j]
+                predictions.append(
+                    TracePrediction(
+                        source=s_id,
+                        target=t_id,
+                        label=label,
+                        score=score
+                    )
+                )
+    return predictions
+
+
+def get_mlm_embeddings(model, tokenizer, sentences):
+    # Encode the sentences
+    inputs = tokenizer(sentences, return_tensors="pt", padding=True, truncation=True, max_length=512)
+
+    # Get model outputs (last hidden states)
+    with torch.no_grad():
+        outputs = model(**inputs, output_hidden_states=True)
+
+    # Extract the last hidden states (embeddings for each token)
+    last_hidden_states = outputs.hidden_states[-1]
+
+    # Compute the mean of all token embeddings (ignoring padding tokens)
+    # Use the 'attention_mask' to exclude padding tokens from the averaging
+    mask = inputs['attention_mask'].unsqueeze(-1).expand(last_hidden_states.size()).float()
+    sum_embeddings = torch.sum(last_hidden_states * mask, 1)
+    sum_mask = torch.clamp(mask.sum(1), min=1e-9)  # Avoid division by zero
+    mean_embeddings = sum_embeddings / sum_mask
+
+    return mean_embeddings
 
 
 def get_label(dataset: TraceDataset, s_id, t_id):

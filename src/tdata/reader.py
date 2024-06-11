@@ -2,15 +2,24 @@ import os
 from typing import Dict, Iterable
 
 import pandas as pd
+from datasets import load_dataset
 from pandas import DataFrame
 
 from tdata.trace_dataset import TraceDataset
 from utils import has_param, read_json
 
 
+def read_hf(repo_path: str):
+    artifact_df = load_dataset(repo_path, "artifact_df")["train"].to_pandas()
+    trace_df = load_dataset(repo_path, "trace_df")["train"].to_pandas()
+    layer_df = load_dataset(repo_path, "layer_df")["train"].to_pandas()
+    trace_df = trace_df.rename({"s_id": "source", "t_id": "target"}, axis=1)
+    return TraceDataset(artifact_df, trace_df, layer_df)
+
+
 def read_project(project_path: str, disable_logs: bool = False) -> TraceDataset:
-    if not os.path.isdir(project_path):
-        raise Exception(f"'{project_path}' does not contain project.")
+    if not os.path.exists(project_path):
+        return read_hf(project_path)
     project_path = os.path.abspath(project_path)
 
     tim = read_tim(project_path)
