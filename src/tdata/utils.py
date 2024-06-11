@@ -24,4 +24,6 @@ def get_content(a: Artifact):
     if "summary" not in a:
         return a["content"]
     s = a["summary"]
-    return a["content"] if isinstance(s, float) and np.isnan(s) else s
+    if s is None:
+        return a["content"]
+    return a["content"] if isinstance(s, float) and (np.isnan(s) or s is None) else s
