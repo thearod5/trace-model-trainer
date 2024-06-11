@@ -10,9 +10,9 @@ from utils import has_param, read_json
 
 
 def read_hf(repo_path: str):
-    artifact_df = load_dataset(repo_path, "artifact_df")["train"].to_pandas()
-    trace_df = load_dataset(repo_path, "trace_df")["train"].to_pandas()
-    layer_df = load_dataset(repo_path, "layer_df")["train"].to_pandas()
+    artifact_df = load_dataset(repo_path, "artifacts")["train"].to_pandas()
+    trace_df = load_dataset(repo_path, "traces")["train"].to_pandas()
+    layer_df = load_dataset(repo_path, "matrices")["train"].to_pandas()
     trace_df = trace_df.rename({"s_id": "source", "t_id": "target"}, axis=1)
     return TraceDataset(artifact_df, trace_df, layer_df)
 
