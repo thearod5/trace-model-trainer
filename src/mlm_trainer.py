@@ -1,7 +1,7 @@
 from datasets import Dataset
 from transformers import BertForMaskedLM, BertTokenizer, DataCollatorForLanguageModeling, Trainer, TrainingArguments
 
-from infra.eval import eval_model, print_metrics
+from infra.eval import predict_model, print_metrics
 from tdata.reader import read_project
 
 if __name__ == "__main__":
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     model = BertForMaskedLM.from_pretrained("bert-base-uncased")
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
-    before_metrics, _ = eval_model(model, eval_dataset, title="Before Training")
+    before_metrics, _ = predict_model(model, eval_dataset, title="Before Training")
 
 
     # Tokenize the data
@@ -59,6 +59,6 @@ if __name__ == "__main__":
 
     trainer.train()
 
-    after_metrics, _ = eval_model(trainer.model, eval_dataset, title="After Training")
+    after_metrics, _ = predict_model(trainer.model, eval_dataset, title="After Training")
 
     print_metrics([before_metrics, after_metrics], ["before training", "after training"])

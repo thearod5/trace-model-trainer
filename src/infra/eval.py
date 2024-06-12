@@ -15,21 +15,27 @@ from tdata.types import TracePrediction
 from utils import clear_memory, get_device, scale, t_id_creator
 
 
-def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None, print_missing_links: bool = False,
-               disable_logs: bool = False):
+def predict_model(model, dataset: TraceDataset, model_name: str = None, title=None, print_missing_links: bool = False,
+                  disable_logs: bool = False, do_eval=True):
     if model_name:
         model = SentenceTransformer(model_name)
-    device = get_device(disable_logs=disable_logs)
-    model.eval()
-    model.to(device)
-    model_type = get_model(model)
+
+    model_type = get_model_type(model)
     prediction_funcs = {
         "st_model": predict_scores,
         "mlm_model": get_mlm_scores,
         "vsm": get_vsm_predictions
     }
+
+    if model_type == "st_model":
+        device = get_device(disable_logs=disable_logs)
+        model.eval()
+        model.to(device)
+
     trace_predictions = prediction_funcs[model_type](model, dataset, disable_logs=disable_logs)
-    metrics = calculate_metrics(trace_predictions)
+    metrics = {}
+    if do_eval:
+        metrics = calculate_metrics(trace_predictions)
 
     if print_missing_links:
         missed_links = [p for p in trace_predictions if p.score < 0.5 and p.label == 1]
@@ -44,7 +50,7 @@ def eval_model(model, dataset: TraceDataset, model_name: str = None, title=None,
     return metrics, trace_predictions
 
 
-def get_model(model):
+def get_model_type(model):
     if model is None:
         return "vsm"
     if isinstance(model, SentenceTransformer):
@@ -57,6 +63,7 @@ def eval_vsm(dataset: TraceDataset, title: str = None, **kwargs):
     vsm_controller = VSMController()
     vsm_controller.train(dataset.artifact_map.values())
     vsm_predictions = get_vsm_predictions(vsm_controller, dataset)
+    # select_top_candidates(vsm_predictions)
     vsm_metrics = calculate_metrics(vsm_predictions)
     if title:
         print(title)

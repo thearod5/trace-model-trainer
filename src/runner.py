@@ -9,7 +9,7 @@ AVAIL_MODELS = ["all-MiniLM-L6-v2", "thearod5/pl-bert-siamese-encoder", "all-rob
 tools = {
     "experiment": {
         "func": run_experiment,
-        "args": ["EVAL_PROJECT_PATH", "MODEL_NAME", "MIN_WORDS", "VSM_THRESHOLD"]
+        "args": ["EVAL_PROJECT_PATH", "MODEL_NAME"]
     },
     "eval": {
         "func": run_eval,

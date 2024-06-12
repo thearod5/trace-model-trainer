@@ -7,7 +7,7 @@ from pandas import DataFrame
 from tqdm import tqdm
 
 from constants import OUTPUT_PATH
-from infra.eval import eval_model
+from infra.eval import predict_model
 from infra.generic_trainer import generic_train
 from tdata.reader import read_project
 from tdata.trace_dataset import TraceDataset
@@ -34,7 +34,7 @@ def search(train_dataset_path: str, test_dataset_path: str, models: List[str], o
     entries = []
 
     for model_name in models:
-        baseline_metrics, _ = eval_model(None, test_dataset, model_name=model_name, disable_logs=disable_logs)
+        baseline_metrics, _ = predict_model(None, test_dataset, model_name=model_name, disable_logs=disable_logs)
         entries.append({"model": model_name, **baseline_metrics})
 
         for iterable_kwargs in tqdm(options, desc="Iterating through options"):
@@ -59,7 +59,7 @@ def run_iteration(train_dataset: TraceDataset, test_dataset: TraceDataset, model
                                   **iterable_kwargs,
                                   **kwargs)
 
-    metrics, predictions = eval_model(trained_model, test_dataset, disable_logs=disable_logs)
+    metrics, predictions = predict_model(trained_model, test_dataset, disable_logs=disable_logs)
 
     # cleanup
     trained_model.to('cpu')
