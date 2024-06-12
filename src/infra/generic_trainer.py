@@ -29,6 +29,7 @@ def generic_train(dataset: TraceDataset,
                   n_epochs: int = 1,
                   val_trace_dataset: TraceDataset = None,
                   model_name: str = "all-MiniLM-L6-v2",
+                  model: SentenceTransformer = None,
                   output_path: str = None,
                   batch_size: int = 16,
                   learning_rate=5e-5,
@@ -48,14 +49,15 @@ def generic_train(dataset: TraceDataset,
     val_dataset = to_dataset(val_trace_dataset, dataset_type)
 
     # Load a pre-trained SentenceTransformer model
-    model = SentenceTransformer(
-        model_name,
-        model_card_data=SentenceTransformerModelCardData(
-            language="en",
-            license="apache-2.0",
-            model_name="Training on tracing software artifacts.",
+    if not model:
+        model = SentenceTransformer(
+            model_name,
+            model_card_data=SentenceTransformerModelCardData(
+                language="en",
+                license="apache-2.0",
+                model_name="Training on tracing software artifacts.",
+            )
         )
-    )
 
     # Define training arguments (adjust as necessary)
     run_name = f"{model_name}-{n_epochs}"
