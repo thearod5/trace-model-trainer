@@ -30,7 +30,6 @@ def predict_model(model, dataset: TraceDataset, model_name: str = None, title=No
     if model_type == "st_model":
         device = get_device(disable_logs=disable_logs)
         model.eval()
-        model.to(device)
 
     trace_predictions = prediction_funcs[model_type](model, dataset, disable_logs=disable_logs)
     metrics = {}
@@ -45,7 +44,6 @@ def predict_model(model, dataset: TraceDataset, model_name: str = None, title=No
         print(title)
         print(metrics)
 
-    model.to('cpu')
     clear_memory()
     return metrics, trace_predictions
 

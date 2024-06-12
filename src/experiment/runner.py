@@ -9,7 +9,6 @@ from selection.top_candidate import select_top_candidates
 from tdata.reader import read_project
 from tdata.trace_dataset import TraceDataset
 from tdata.utils import get_content
-from utils import clear_memory
 
 
 def create_vsm_important_words(dataset: TraceDataset, min_words: int, threshold: float):
@@ -58,12 +57,11 @@ def run_experiment(eval_project_path: str, model_name: str, experiment_type=BOOT
 
     # Before Training Evaluate
     m1, _ = predict_model(model, test_dataset)
-    clear_memory(model)
 
     # Training
     trained_model = generic_train(test_dataset_transformed,
                                   "mnrl_symetric",
-                                  model_name=model_name,
+                                  model=model,
                                   n_epochs=1,
                                   disable_tqdm=True)
     # Eval
