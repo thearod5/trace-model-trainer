@@ -20,6 +20,11 @@ def select_top_candidates(predictions: List[TracePrediction], key_name="source")
     selected = []
     for k, v in key2preds.items():
         selected.append(v[0])
+
+    keys_missing = [k for k, v in key2preds.items() if all(p.score == 0 for p in v)]
+    keys_wrong = [k for k, v in key2preds.items() if v[0].label == 0]
+    keys_wrong = set(keys_wrong).difference(keys_missing)
+    print("Percent Wrong:", len(keys_wrong) / len(key2preds))
     return selected
 # source = 0.41
 # target = 0.45
