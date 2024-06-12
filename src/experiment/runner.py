@@ -14,6 +14,8 @@ def create_experiment_dataset(dataset: TraceDataset, min_words: int = 5):
     vsm_controller.train(dataset.artifact_map.values())
 
     artifact_df["content"] = artifact_df["content"].apply(lambda a_content: vsm_controller.get_top_n_words(a_content, min_words))
+    dataset.trace_df["source"] = artifact_df["id"]
+    dataset.trace_df["target"] = artifact_df["id"]
 
     return TraceDataset(artifact_df, dataset.trace_df, dataset.layer_df)
 

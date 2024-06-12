@@ -18,7 +18,7 @@ tools = {
     "search": {
         "func": run_search,
         "args": ["TRAIN_PROJECT_PATH", "EVAL_PROJECT_PATH", "LOSS_FUNC_NAME", "MODELS"]
-    }
+    },
 }
 
 arg_prompts = {
