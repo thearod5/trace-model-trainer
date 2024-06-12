@@ -47,7 +47,10 @@ class TraceDataset:
         return self.artifact_df[self.artifact_df['layer'] == type_name]
 
     def split(self, test_size: float) -> Tuple["TraceDataset", "TraceDataset"]:
-        a_trace_df, b_trace_df = train_test_split(self.trace_df, test_size=test_size, random_state=42)
+        indices = list(range(len(self.trace_df)))
+        a_trace_indices, b_trace_indices = train_test_split(indices, test_size=test_size, random_state=42)
+        a_trace_df = self.trace_df.iloc[a_trace_indices].reset_index(drop=True)
+        b_trace_df = self.trace_df.iloc[b_trace_indices].reset_index(drop=True)
         return self.subset(a_trace_df), self.subset(b_trace_df)
 
     def subset(self, trace_df: DataFrame):
