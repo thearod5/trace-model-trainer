@@ -72,6 +72,7 @@ def scale(matrix):
 
 def clear_memory(model=None):
     if model:
+        model.to("cpu")
         del model
     gc.collect()
     torch.cuda.empty_cache()

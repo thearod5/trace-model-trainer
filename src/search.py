@@ -62,9 +62,7 @@ def run_iteration(train_dataset: TraceDataset, test_dataset: TraceDataset, model
     metrics, predictions = predict_model(trained_model, test_dataset, disable_logs=disable_logs)
 
     # cleanup
-    trained_model.to('cpu')
-    del trained_model
-    clear_memory()
+    clear_memory(trained_model)
 
     # Display GPU memory usage after cleanup
     if torch.cuda.is_available():
