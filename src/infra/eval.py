@@ -104,6 +104,9 @@ def calculate_map(trace_predictions):
         ap = average_precision_score(labels, scores)
         ap_scores.append(ap)
     print("Number of missing labels: ", n_missing_labels)
+    if len(ap_scores) == 0:
+        print("No queries contained positive lnks.")
+        return 0
     return sum(ap_scores) / len(ap_scores)
 
 
