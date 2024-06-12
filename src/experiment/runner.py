@@ -1,3 +1,4 @@
+import pandas as pd
 from sentence_transformers import SentenceTransformer
 
 from experiment.vsm import VSMController
@@ -9,15 +10,18 @@ from tdata.trace_dataset import TraceDataset
 
 def create_experiment_dataset(dataset: TraceDataset, min_words: int = 5):
     artifact_df = dataset.artifact_df.copy()
-
     vsm_controller = VSMController()
     vsm_controller.train(dataset.artifact_map.values())
-
     artifact_df["content"] = artifact_df["content"].apply(lambda a_content: vsm_controller.get_top_n_words(a_content, min_words))
-    dataset.trace_df["source"] = artifact_df["id"]
-    dataset.trace_df["target"] = artifact_df["id"]
 
-    return TraceDataset(artifact_df, dataset.trace_df, dataset.layer_df)
+    trace_df = dataset.trace_df.copy()
+    trace_df["source"] = artifact_df["id"]
+    trace_df["target"] = artifact_df["id"]
+
+    layers = list(artifact_df["layer"].unique())
+    layer_df = pd.DataFrame({"source": layers, "target": layers})
+
+    return TraceDataset(artifact_df, trace_df, layer_df)
 
 
 def run_experiment(eval_project_path: str, model_name: str):
