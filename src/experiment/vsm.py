@@ -47,14 +47,14 @@ class VSMController:
         similarity_matrix = cosine_similarity(source_matrix, target_matrix)
         return similarity_matrix
 
-    def get_top_n_words(self, text, n):
+    def get_top_n_words(self, text, n, threshold: float):
         if not self.has_trained:
             raise Exception("This model is not trained yet.")
         words = self.preprocess(text).split()
         if len(words) <= n:
             return text
         word_scores = {word: self.get_score(word.lower()) for word in words}
-        selected_words = [w for w in words if word_scores[w] >= 2.9 and w not in prepositions]
+        selected_words = [w for w in words if word_scores[w] >= threshold and w not in prepositions]
         transformed = ' '.join(selected_words)
         return transformed
 
