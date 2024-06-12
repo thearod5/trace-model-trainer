@@ -9,7 +9,7 @@ AVAIL_MODELS = ["all-MiniLM-L6-v2", "thearod5/pl-bert-siamese-encoder", "all-rob
 tools = {
     "experiment": {
         "func": run_experiment,
-        "args": ["EVAL_PROJECT_PATH", "MODEL_NAME"]
+        "args": ["EVAL_PROJECT_PATH", "MODEL_NAME", "MIN_WORDS", "VSM_THRESHOLD"]
     },
     "eval": {
         "func": run_eval,
@@ -42,6 +42,14 @@ arg_prompts = {
         "prompt": "Model Name",
         "options": AVAIL_MODELS
     },
+    "MIN_WORDS": {
+        "prompt": "Minimum number of words required to apply vsm transformation.",
+        "type_converter": int
+    },
+    "VSM_THRESHOLD": {
+        "prompt": "VSM threshold to select important words for artifact.",
+        "type_converter": float
+    }
 
 }
 
