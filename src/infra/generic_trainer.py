@@ -10,6 +10,7 @@ from tdata.trace_dataset import TraceDataset
 from utils import clear_memory
 
 loss2function = {
+    "contrastive_tension": losses.ContrastiveTensionLossInBatchNegatives,
     "cosent": losses.CoSENTLoss,
     "triplet": losses.TripletLoss,
     "mnrl": losses.MultipleNegativesRankingLoss,
@@ -20,7 +21,8 @@ loss2dataset = {
     losses.CoSENTLoss: "float",
     losses.TripletLoss: "triplet",
     losses.MultipleNegativesRankingLoss: "mnrl",
-    losses.MultipleNegativesSymmetricRankingLoss: "mnrl"
+    losses.MultipleNegativesSymmetricRankingLoss: "mnrl",
+    losses.ContrastiveTensionLossInBatchNegatives: "contrastive_tension"
 }
 
 

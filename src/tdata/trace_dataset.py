@@ -34,7 +34,10 @@ class TraceDataset:
 
     def get_layer_iterator(self):
         payload = []
-        for i, (source_layer, target_layer) in self.layer_df.iterrows():
+        for i, layer_row in self.layer_df.iterrows():
+            source_layer = layer_row["source_type"]
+            target_layer = layer_row["target_type"]
+
             source_artifact_df = self.get_by_type(source_layer)
             target_artifact_df = self.get_by_type(target_layer)
 
@@ -77,5 +80,5 @@ class TraceDataset:
 
         artifact_df = self.artifact_df[self.artifact_df["id"].isin(artifact_ids_set)]
         trace_df = DataFrame(trace_entries)
-        layer_df = DataFrame(layer_entries)
+        layer_df = DataFrame(layer_entries, columns=["source_type", "target_type"])
         return TraceDataset(artifact_df, trace_df, layer_df)

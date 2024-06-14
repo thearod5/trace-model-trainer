@@ -4,14 +4,14 @@ from transformers import BertForMaskedLM, BertTokenizer, DataCollatorForLanguage
 from infra.eval import predict_model, print_metrics
 from tdata.reader import read_project
 
-if __name__ == "__main__":
-    train_project_path = "../res/safa"
 
+def run_mlm(train_project_path: str, eval_project_path: str):
     #
     # Training and Evaluation
     #
-    eval_dataset = read_project(train_project_path)
+    metrics = {}
     train_dataset = read_project(train_project_path)
+    eval_dataset = read_project(eval_project_path)
     artifact_content = list(train_dataset.artifact_map.values())
     dataset = Dataset.from_dict({"text": artifact_content})
 
@@ -20,12 +20,11 @@ if __name__ == "__main__":
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
     before_metrics, _ = predict_model(model, eval_dataset, title="Before Training")
-
+    metrics['before-training'] = before_metrics
 
     # Tokenize the data
     def tokenize_function(examples):
         return tokenizer(examples['text'], truncation=True, max_length=128)
-
 
     batch_size = 8
     tokenized_datasets = dataset.map(tokenize_function, batched=True, batch_size=batch_size)
@@ -60,5 +59,6 @@ if __name__ == "__main__":
     trainer.train()
 
     after_metrics, _ = predict_model(trainer.model, eval_dataset, title="After Training")
+    metrics['after-training'] = after_metrics
 
-    print_metrics([before_metrics, after_metrics], ["before training", "after training"])
+    print_metrics(metrics)

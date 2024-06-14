@@ -1,7 +1,8 @@
-from eval import run_eval
 from experiment.runner import run_experiment
+from infra.eval import run_eval
 from infra.generic_trainer import loss2function
-from search import run_search
+from infra.mlm_trainer import run_mlm
+from infra.search import run_search
 from utils import get_or_prompt
 
 AVAIL_MODELS = ["all-MiniLM-L6-v2", "thearod5/pl-bert-siamese-encoder", "all-roberta-large-v1"]
@@ -19,6 +20,10 @@ tools = {
         "func": run_search,
         "args": ["TRAIN_PROJECT_PATH", "EVAL_PROJECT_PATH", "LOSS_FUNC_NAME", "MODELS"]
     },
+    "mlm": {
+        "func": run_mlm,
+        "args": ["TRAIN_PROJECT_PATH", "EVAL_PROJECT_PATH"]
+    }
 }
 
 arg_prompts = {

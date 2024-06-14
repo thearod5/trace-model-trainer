@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import List
 
 import numpy as np
+import pandas as pd
 import torch
 from pandas import DataFrame
 from sentence_transformers import SentenceTransformer
@@ -10,9 +11,31 @@ from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoTokenizer
 
 from experiment.vsm import VSMController
+from tdata.reader import read_project
 from tdata.trace_dataset import TraceDataset
 from tdata.types import TracePrediction
-from utils import clear_memory, get_device, scale, t_id_creator
+from utils import clear_memory, scale, t_id_creator
+
+
+def run_eval(eval_project_path: str, model_name: str):
+    test_dataset = read_project(eval_project_path)
+    use_vsm = False
+
+    metrics = {}
+
+    # Baseline scores
+    if use_vsm:
+        m1, _ = eval_vsm(test_dataset)
+        metrics['vsm'] = m1
+
+    # Load SentenceTransformer model
+    if not use_vsm:
+        model = SentenceTransformer(model_name)
+        m2, _ = predict_model(model, test_dataset)
+        metrics[model_name] = m2
+
+    # Print metrics
+    print_metrics(metrics)
 
 
 def predict_model(model, dataset: TraceDataset, model_name: str = None, title=None, print_missing_links: bool = False,
@@ -28,7 +51,6 @@ def predict_model(model, dataset: TraceDataset, model_name: str = None, title=No
     }
 
     if model_type == "st_model":
-        device = get_device(disable_logs=disable_logs)
         model.eval()
 
     trace_predictions = prediction_funcs[model_type](model, dataset, disable_logs=disable_logs)
@@ -232,8 +254,23 @@ def print_links(trace_predictions):
         print(f"{missed_link.source} -> {missed_link.target} ({missed_link.score})")
 
 
-def print_metrics(metrics, metric_names):
-    df = DataFrame(metrics)
-    df.insert(0, "name", metric_names)
+def print_metrics(name2metric, order: List[str] = None, levels=0):
+    if order is None:
+        order = name2metric.keys()
+
+    if levels > 0:
+        dfs = []
+        bar = "-" * 30
+        for group in order:
+            group_metrics = name2metric[group]
+            print(bar, group, bar)
+            group_df = print_metrics(group_metrics, levels=levels - 1)
+            dfs.append(group_df)
+        return pd.concat(dfs)
+
+    values = [name2metric[m] for m in order]
+
+    df = DataFrame(values)
+    df.insert(0, "name", order)
     print(df.to_string(index=False))
     return df

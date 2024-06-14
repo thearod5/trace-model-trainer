@@ -2,8 +2,8 @@ from collections import defaultdict
 
 import pandas as pd
 from datasets import Dataset
+from sentence_transformers.losses import ContrastiveTensionDataLoader
 
-from experiment.vsm import VSMController
 from tdata.trace_dataset import TraceDataset
 from utils import t_id_creator
 
@@ -15,30 +15,44 @@ def to_dataset(dataset: TraceDataset, dataset_name: str):
         return to_float_dataset(dataset)
     elif dataset_name == "triplet":
         return to_triplet_dataset(dataset)
+    elif dataset_name == "contrastive_tension":
+        return to_contrastive_tension_dataset(dataset)
     else:
         raise Exception(f"Unknown dataset type: {dataset_name}")
+
+
+def to_contrastive_tension_dataset(dataset: TraceDataset):
+    train_examples = list(dataset.artifact_df["content"])
+    examples = [e for e in ContrastiveTensionDataLoader(train_examples, batch_size=6, pos_neg_ratio=3)]
+
+    text1 = [e.texts[0] for e_batch in examples for e in e_batch]
+    text2 = [e.texts[1] for e_batch in examples for e in e_batch]
+    labels = [e.label for e_batch in examples for e in e_batch]
+    return Dataset.from_dict({
+        "text1": text1,
+        "texts2": text2,
+        "label": labels
+    })
 
 
 def to_float_dataset(dataset: TraceDataset):
     sources = []
     targets = []
-    scores = []
-    for i, row in dataset.trace_df.iterrows():
-        s_id = row['source']
-        t_id = row['target']
-        sources.append(dataset.artifact_map[s_id])
-        targets.append(dataset.artifact_map[t_id])
-        scores.append(1)
+    labels = []
+    t_map = dataset.trace_map
 
-    vsm_controller = VSMController()
-    vsm_controller.train(dataset.artifact_map.values())
-
-    # TODO: sample negatives and add to train.
+    for source_ids, target_ids in dataset.get_layer_iterator():
+        for s_id in source_ids:
+            for t_id in target_ids:
+                trace_id = t_id_creator(source=s_id, target=t_id)
+                sources.append(dataset.artifact_map[s_id])
+                targets.append(dataset.artifact_map[t_id])
+                labels.append(1 if trace_id in t_map else 0)
 
     return Dataset.from_dict({
         "sentence1": sources,
         "sentence2": targets,
-        "score": scores
+        "label": labels
     })
 
 
@@ -48,8 +62,8 @@ def to_mnrl_dataset(dataset: TraceDataset):
     for i, row in dataset.trace_df.iterrows():
         s_id = row['source']
         t_id = row['target']
-        anchors.append(dataset.artifact_map[t_id])
-        positives.append(dataset.artifact_map[s_id])
+        anchors.append(dataset.artifact_map[s_id])
+        positives.append(dataset.artifact_map[t_id])
 
     return Dataset.from_dict({
         "anchor": anchors,

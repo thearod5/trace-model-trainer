@@ -1,4 +1,3 @@
-import re
 import string
 from typing import List
 
@@ -30,8 +29,6 @@ class VSMController:
         text = text.lower()
         # Remove punctuation
         text = text.translate(str.maketrans('', '', string.punctuation))
-        # Remove digits
-        text = re.sub(r'\d+', '', text)
         # Remove extra whitespace
         text = text.strip()
         return text
@@ -53,8 +50,10 @@ class VSMController:
         words = self.preprocess(text).split()
         if len(words) <= n:
             return text
-        word_scores = {word: self.get_score(word.lower()) for word in words}
-        selected_words = [w for w in words if word_scores[w] >= threshold and w not in prepositions]
+        word2score = {word: self.get_score(word.lower()) for word in words}
+        selected_words = [w for w in words if word2score[w] >= threshold and w not in prepositions]
+        if len(selected_words) == 0:
+            selected_words = [word2score[max(word2score.values())]]
         transformed = ' '.join(selected_words)
         return transformed
 
