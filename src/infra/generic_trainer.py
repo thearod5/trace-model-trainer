@@ -5,7 +5,7 @@ from torch.optim import Adam
 from transformers import get_scheduler
 
 from constants import OUTPUT_PATH
-from tdata.converts import to_dataset
+from tdata.factory import to_dataset
 from tdata.trace_dataset import TraceDataset
 from utils import clear_memory
 

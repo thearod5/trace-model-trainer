@@ -8,7 +8,11 @@ from utils import get_or_prompt
 AVAIL_MODELS = ["all-MiniLM-L6-v2", "thearod5/pl-bert-siamese-encoder", "all-roberta-large-v1"]
 
 tools = {
-    "experiment": {
+    "train_on_doc": {
+        "func": train_on_doc,
+        "args": ["TRAIN_PROJECT_PATH", "EVAL_PROJECT_PATH", "MODEL_NAME"]
+    },
+    "vsm_for_importance": {
         "func": run_experiment,
         "args": ["EVAL_PROJECT_PATH", "MODEL_NAME"]
     },
