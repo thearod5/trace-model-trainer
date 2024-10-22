@@ -25,3 +25,11 @@ class TracePrediction:
     target: str
     label: Optional[int]
     score: Optional[float]
+
+    def to_json(self) -> Dict:
+        return {
+            "source": self.source,
+            "target": self.target,
+            "score": self.score,
+            "label": self.label
+        }

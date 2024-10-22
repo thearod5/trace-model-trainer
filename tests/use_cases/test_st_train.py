@@ -2,11 +2,11 @@ import os.path
 
 from sentence_transformers.evaluation import RerankingEvaluator
 from sentence_transformers.losses import ContrastiveLoss
+from use_cases.kfold import kfold
+from use_cases.splitters.splitter_factory import SplitterFactory
+from use_cases.utils import create_samples, eval_model
 
 from constants import BATCH_SIZE
-from eval.kfold import kfold
-from eval.splitters.splitter_factory import SplitterFactory
-from eval.utils import create_samples, eval_model
 from formatters.formatter_factory import FormatterFactory
 from models.st_model import STModel
 from readers.loader import load_traceability_dataset

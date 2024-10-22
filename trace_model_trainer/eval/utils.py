@@ -7,15 +7,12 @@ from formatters.triplet_formatter import TripletFormatter
 from models.itrace_model import ITraceModel
 from readers.trace_dataset import TraceDataset
 from readers.types import TracePrediction
+from utils import create_source2targets
 
 
 def eval_model(model: ITraceModel, dataset: TraceDataset) -> Dict:
     # Create map for easy lookup to attach label later.
-    source2target = defaultdict(dict)
-    for t in dataset.trace_map.values():
-        label = t.get("label", 1)
-        if label == 1:
-            source2target[t["source"]][t["target"]] = 1
+    source2target = create_source2targets(dataset.trace_df)
 
     predictions = compute_model_predictions(model, dataset)
 

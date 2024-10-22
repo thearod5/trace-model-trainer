@@ -1,14 +1,17 @@
-from typing import Tuple
+from collections import defaultdict
+from typing import Dict, List, Tuple
 
-import pandas as pd
+from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 
 from eval.splitters.isplitter import ISplitter
 from readers.trace_dataset import TraceDataset
+from readers.types import TracePrediction
+from utils import create_source2targets
 
 
 class QuerySplitter(ISplitter):
-    def __init__(self, group_col: str):
+    def __init__(self, group_col: str = "target"):
         self.group_cop = group_col
 
     def split(self, dataset: TraceDataset, train_size: float) -> Tuple[TraceDataset, TraceDataset]:
@@ -16,26 +19,45 @@ class QuerySplitter(ISplitter):
         Splits trace dataset so that entire artifacts are removed from the training set and put into the test set.
         :param dataset: The dataset to split.
         :param train_size: The size (in percentage) of the training set.
+        TODO: How should splitting be quelt between layers? ->
+        DESIGN:
         :return: Training set followed by testing set.
         """
-        df = dataset.trace_df
+        query2items = defaultdict(list)
+        for source_ids, target_ids in dataset.get_layer_iterator():
+            for t_id in target_ids:
+                query2items[t_id].extend(source_ids)
 
-        group_map = {group_name: group for group_name, group in df.groupby(self.group_cop)}
-        train_groups, test_groups = train_test_split(list(group_map.keys()), train_size=train_size)
+        train_queries, test_queries = train_test_split(list(query2items.keys()), train_size=train_size)
 
-        train_df = pd.concat([group_map[g] for g in train_groups])
-        test_df = pd.concat([group_map[g] for g in test_groups])
+        source2targets = create_source2targets(dataset.trace_df)
 
-        print("Test Groups:", test_groups)
+        train_df = self.extract_trace_df_from_query_map(source2targets, {q: query2items[q] for q in train_queries})
+        test_df = self.extract_trace_df_from_query_map(source2targets, {q: query2items[q] for q in test_queries})
 
         train_trace_df = TraceDataset(
-            artifact_df=dataset.artifact_df[~dataset.artifact_df["id"].isin(test_groups)],
+            artifact_df=dataset.artifact_df[~dataset.artifact_df["id"].isin(test_queries)],
             trace_df=train_df,
             layer_df=dataset.layer_df
         )
         test_trace_df = TraceDataset(
-            artifact_df=dataset.artifact_df[~dataset.artifact_df["id"].isin(train_groups)],
+            artifact_df=dataset.artifact_df[~dataset.artifact_df["id"].isin(train_queries)],
             trace_df=test_df,
             layer_df=dataset.layer_df
         )
         return train_trace_df, test_trace_df
+
+    @staticmethod
+    def extract_trace_df_from_query_map(source2targets: Dict[str, Dict[str, int]], query_map: Dict[str, List[str]]):
+        samples = []
+        for query, query_items in query_map.items():
+            for item in query_items:
+                label = source2targets[item].get(query, 0)
+                samples.append(TracePrediction(
+                    source=item,
+                    target=query,
+                    label=label,
+                    score=None  # Override score if one exists in trace df.
+                ).to_json())
+        train_df = DataFrame(samples)
+        return train_df

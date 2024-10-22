@@ -1,8 +1,9 @@
 import os.path
 
-from eval.kfold import kfold
-from eval.splitters.splitter_factory import SplitterFactory
-from eval.utils import eval_model
+from use_cases.kfold import kfold
+from use_cases.splitters.splitter_factory import SplitterFactory
+from use_cases.utils import eval_model
+
 from models.mlm_model import MLMModel
 from readers.loader import load_traceability_dataset
 

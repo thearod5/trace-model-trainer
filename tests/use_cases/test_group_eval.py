@@ -1,6 +1,7 @@
-from eval.kfold import kfold
-from eval.splitters.splitter_factory import SplitterFactory
-from eval.utils import aggregate_metrics, eval_model
+from use_cases.kfold import kfold
+from use_cases.splitters.splitter_factory import SplitterFactory
+from use_cases.utils import aggregate_metrics, eval_model
+
 from models.mlm_model import MLMModel
 from models.st_model import STModel
 from models.vsm_model import VSMModel

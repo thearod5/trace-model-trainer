@@ -1,9 +1,12 @@
 from typing import Tuple
 
+from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 
 from eval.splitters.isplitter import ISplitter
 from readers.trace_dataset import ArtifactDataFrame, TraceDataFrame, TraceDataset
+from readers.types import TracePrediction
+from utils import create_source2targets
 
 
 class LinkSplitter(ISplitter):
@@ -14,8 +17,22 @@ class LinkSplitter(ISplitter):
         :param train_size: The percentage of the data to keep in the first split.
         :return: Train split and test split.
         """
-        df = dataset.trace_df
-        train_df, test_df = train_test_split(df, stratify=df["label"], test_size=train_size)
+        source2targets = create_source2targets(dataset.trace_df)
+        traces = []
+        # TODO: This operation is getting repeated now.
+        for source_ids, target_ids in dataset.get_layer_iterator():
+            for s_id in source_ids:
+                for t_id in target_ids:
+                    traces.append(TracePrediction(
+                        source=s_id,
+                        target=t_id,
+                        score=None,
+                        label=source2targets[s_id].get(t_id, 0)
+                    ).to_json())
+
+        trace_df = DataFrame(traces)
+
+        train_df, test_df = train_test_split(trace_df, stratify=trace_df["label"], test_size=train_size)
 
         train_trace_dataset = TraceDataset(
             artifact_df=self.filter_unreferenced_artifacts(train_df, dataset.artifact_df),

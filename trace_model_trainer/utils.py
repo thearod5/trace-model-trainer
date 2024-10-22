@@ -1,9 +1,11 @@
 import gc
 import inspect
 import json
+from collections import defaultdict
 from typing import List
 
 import torch
+from pandas import DataFrame
 from sklearn.preprocessing import minmax_scale
 
 from readers.types import TracePrediction
@@ -55,6 +57,15 @@ def scale(matrix):
     # Reshape back to the original matrix shape
     scaled_matrix = scaled_matrix.reshape(matrix.shape)
     return scaled_matrix
+
+
+def create_source2targets(trace_df: DataFrame):
+    source2target = defaultdict(dict)
+    for _, t in trace_df.iterrows():
+        label = t.get("label", 1)
+        if label == 1:
+            source2target[t["source"]][t["target"]] = 1
+    return source2target
 
 
 def create_predictions_from_matrix(sources: List[str], targets: List[str], similarity_matrix: List[List[float]]) -> (
