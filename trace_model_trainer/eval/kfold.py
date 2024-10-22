@@ -1,7 +1,7 @@
 from typing import List
 
-from eval.splitters.isplitter import ISplitter
-from readers.trace_dataset import TraceDataset
+from trace_model_trainer.eval.splitters.isplitter import ISplitter
+from trace_model_trainer.readers.trace_dataset import TraceDataset
 
 
 def kfold(dataset: TraceDataset,

@@ -1,6 +1,6 @@
 from datasets import Dataset
 
-from formatters.iformatter import IFormatter
+from trace_model_trainer.formatters.iformatter import IFormatter
 
 
 class AnchorPositiveFormatter(IFormatter):

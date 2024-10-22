@@ -3,7 +3,7 @@ from typing import Set
 import numpy as np
 from pandas import DataFrame
 
-from readers.types import Artifact
+from trace_model_trainer.readers.types import Artifact
 
 
 def get_artifact_ids_from_trace_df(trace_df: DataFrame) -> Set:

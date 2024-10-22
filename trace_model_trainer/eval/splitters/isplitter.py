@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
 
-from readers.trace_dataset import TraceDataset
+from trace_model_trainer.readers.trace_dataset import TraceDataset
 
 
 class ISplitter(ABC):

@@ -1,7 +1,7 @@
 from datasets import Dataset
 
-from readers.trace_dataset import TraceDataset
-from formatters.iformatter import IFormatter
+from trace_model_trainer.formatters.iformatter import IFormatter
+from trace_model_trainer.readers.trace_dataset import TraceDataset
 
 
 class ClassificationFormatter(IFormatter):

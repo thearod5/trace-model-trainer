@@ -1,11 +1,10 @@
-from use_cases.kfold import kfold
-from use_cases.splitters.splitter_factory import SplitterFactory
-from use_cases.utils import aggregate_metrics, eval_model
-
-from models.mlm_model import MLMModel
-from models.st_model import STModel
-from models.vsm_model import VSMModel
-from readers.loader import load_traceability_dataset
+from trace_model_trainer.eval.kfold import kfold
+from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
+from trace_model_trainer.eval.utils import aggregate_metrics, eval_model
+from trace_model_trainer.models.mlm_model import MLMModel
+from trace_model_trainer.models.st_model import STModel
+from trace_model_trainer.models.vsm_model import VSMModel
+from trace_model_trainer.readers.loader import load_traceability_dataset
 
 
 def main():

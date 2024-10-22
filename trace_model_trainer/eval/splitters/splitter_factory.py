@@ -1,8 +1,8 @@
 from enum import Enum
 
-from eval.splitters.isplitter import ISplitter
-from eval.splitters.link_splitter import LinkSplitter
-from eval.splitters.query_splitter import QuerySplitter
+from trace_model_trainer.eval.splitters.isplitter import ISplitter
+from trace_model_trainer.eval.splitters.link_splitter import LinkSplitter
+from trace_model_trainer.eval.splitters.query_splitter import QuerySplitter
 
 
 class SplitterFactory(Enum):

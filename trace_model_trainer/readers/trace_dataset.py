@@ -1,7 +1,7 @@
 from pandas import DataFrame
 
-from readers.utils import get_content
-from utils import t_id_creator
+from trace_model_trainer.readers.utils import get_content
+from trace_model_trainer.utils import t_id_creator
 
 """"
 ArtifactDataFrame: (id, content, summary)

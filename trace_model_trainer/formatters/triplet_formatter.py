@@ -3,9 +3,9 @@ from collections import defaultdict
 import pandas as pd
 from datasets import Dataset
 
-from readers.trace_dataset import TraceDataset
-from formatters.iformatter import IFormatter
-from utils import t_id_creator
+from trace_model_trainer.formatters.iformatter import IFormatter
+from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.utils import t_id_creator
 
 
 class TripletFormatter(IFormatter):

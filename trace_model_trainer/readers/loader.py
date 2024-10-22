@@ -4,8 +4,8 @@ from typing import Literal
 from datasets import Dataset, load_dataset
 from pandas import DataFrame
 
-from readers.reader import read_project
-from readers.trace_dataset import TraceDataset
+from trace_model_trainer.readers.reader import read_project
+from trace_model_trainer.readers.trace_dataset import TraceDataset
 
 DatasetTypes = Literal["train", "traceability"]
 

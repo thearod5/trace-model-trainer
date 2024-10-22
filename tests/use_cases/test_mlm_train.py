@@ -1,11 +1,10 @@
 import os.path
 
-from use_cases.kfold import kfold
-from use_cases.splitters.splitter_factory import SplitterFactory
-from use_cases.utils import eval_model
-
-from models.mlm_model import MLMModel
-from readers.loader import load_traceability_dataset
+from trace_model_trainer.eval.kfold import kfold
+from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
+from trace_model_trainer.eval.utils import eval_model
+from trace_model_trainer.models.mlm_model import MLMModel
+from trace_model_trainer.readers.loader import load_traceability_dataset
 
 
 def main():

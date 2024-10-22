@@ -1,8 +1,8 @@
 from datasets import Dataset
 from sentence_transformers.losses import ContrastiveTensionDataLoader
 
-from readers.trace_dataset import TraceDataset
-from formatters.iformatter import IFormatter
+from trace_model_trainer.formatters.iformatter import IFormatter
+from trace_model_trainer.readers.trace_dataset import TraceDataset
 
 
 class ContrastiveTensionFormatter(IFormatter):

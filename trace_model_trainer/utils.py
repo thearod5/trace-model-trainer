@@ -8,7 +8,7 @@ import torch
 from pandas import DataFrame
 from sklearn.preprocessing import minmax_scale
 
-from readers.types import TracePrediction
+from trace_model_trainer.readers.types import TracePrediction
 
 
 def read_json(f):

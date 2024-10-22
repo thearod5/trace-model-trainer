@@ -4,8 +4,8 @@ from typing import Dict, Iterable
 import pandas as pd
 from pandas import DataFrame
 
-from readers.trace_dataset import TraceDataset
-from utils import has_param, read_json
+from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.utils import has_param, read_json
 
 
 def read_project(project_path: str, disable_logs: bool = False) -> TraceDataset:

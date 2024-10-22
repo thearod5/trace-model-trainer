@@ -4,9 +4,9 @@ import torch
 from sentence_transformers import SentenceTransformer, SentenceTransformerTrainer, SentenceTransformerTrainingArguments
 from sentence_transformers.util import cos_sim
 
-from constants import BATCH_SIZE, DEFAULT_FP16, DEFAULT_ST_MODEL, LEARNING_RATE, N_EPOCHS
-from models.itrace_model import ITraceModel, SimilarityMatrix
-from readers.trace_dataset import TraceDataset
+from trace_model_trainer.constants import BATCH_SIZE, DEFAULT_FP16, DEFAULT_ST_MODEL, LEARNING_RATE, N_EPOCHS
+from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
+from trace_model_trainer.readers.trace_dataset import TraceDataset
 
 
 class STModel(ITraceModel):

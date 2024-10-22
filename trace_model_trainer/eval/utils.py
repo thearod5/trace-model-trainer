@@ -3,11 +3,11 @@ from typing import Dict, List
 
 from sklearn.metrics import average_precision_score, ndcg_score
 
-from formatters.triplet_formatter import TripletFormatter
-from models.itrace_model import ITraceModel
-from readers.trace_dataset import TraceDataset
-from readers.types import TracePrediction
-from utils import create_source2targets
+from trace_model_trainer.formatters.triplet_formatter import TripletFormatter
+from trace_model_trainer.models.itrace_model import ITraceModel
+from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.readers.types import TracePrediction
+from trace_model_trainer.utils import create_source2targets
 
 
 def eval_model(model: ITraceModel, dataset: TraceDataset) -> Dict:

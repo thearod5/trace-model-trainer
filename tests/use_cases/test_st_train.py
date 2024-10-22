@@ -2,14 +2,14 @@ import os.path
 
 from sentence_transformers.evaluation import RerankingEvaluator
 from sentence_transformers.losses import ContrastiveLoss
-from use_cases.kfold import kfold
-from use_cases.splitters.splitter_factory import SplitterFactory
-from use_cases.utils import create_samples, eval_model
 
-from constants import BATCH_SIZE
-from formatters.formatter_factory import FormatterFactory
-from models.st_model import STModel
-from readers.loader import load_traceability_dataset
+from trace_model_trainer.constants import BATCH_SIZE
+from trace_model_trainer.eval.kfold import kfold
+from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
+from trace_model_trainer.eval.utils import create_samples, eval_model
+from trace_model_trainer.formatters.formatter_factory import FormatterFactory
+from trace_model_trainer.models.st_model import STModel
+from trace_model_trainer.readers.loader import load_traceability_dataset
 
 
 def main():
