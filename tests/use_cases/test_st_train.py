@@ -12,7 +12,7 @@ from trace_model_trainer.utils import clear_memory
 
 def main():
     test_output_path = os.path.expanduser("~/desktop/safa/output/trace-model-trainer/st_test_output")
-    dataset = load_traceability_dataset("thearod5/ebt")
+    dataset = load_traceability_dataset("thearod5/GANNT")
     splitter = SplitterFactory.QUERY.create(group_col="target")
 
     st_model = STModel("all-MiniLM-L6-v2")

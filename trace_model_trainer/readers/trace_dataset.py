@@ -19,6 +19,10 @@ class TraceDataset:
         :param trace_df: DataFrame containing trace links between artifacts.
         :param layer_df: DataFrame containing the types being traced (Artifact.layer)
         """
+        assert all(c in artifact_df.columns for c in ["id", "content", "summary"]), f"Result: {artifact_df.columns}"
+        assert all(c in trace_df.columns for c in ["source", "target"]), f"Result: {trace_df.columns}"
+        assert all(c in layer_df.columns for c in ["source_type", "target_type"]), f"Result: {layer_df.columns}"
+
         self.artifact_df = artifact_df
         self.trace_df = filter_referenced_artifacts(trace_df, artifact_df)
         self.layer_df = layer_df
