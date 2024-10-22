@@ -1,21 +1,37 @@
 from typing import Dict, List
 
 import torch
+from datasets import Dataset
 from sentence_transformers import SentenceTransformer, SentenceTransformerTrainer, SentenceTransformerTrainingArguments
+from sentence_transformers.evaluation import RerankingEvaluator
 from sentence_transformers.util import cos_sim
 
 from trace_model_trainer.constants import BATCH_SIZE, DEFAULT_FP16, DEFAULT_ST_MODEL, LEARNING_RATE, N_EPOCHS
+from trace_model_trainer.eval.utils import create_samples
+from trace_model_trainer.formatters.formatter_factory import FormatterFactory
+from trace_model_trainer.formatters.iformatter import IFormatter
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
 from trace_model_trainer.readers.trace_dataset import TraceDataset
 
 
 class STModel(ITraceModel):
-    def __init__(self, model_name: str = DEFAULT_ST_MODEL):
+    def __init__(self, model_name: str = DEFAULT_ST_MODEL, formatter: IFormatter = None):
+        """
+        Creates sentence transformer model with given model and formatter.
+        :param model_name:
+        :param formatter:
+        """
         self.model_name = model_name
         self._model = None
+        self._formatter = formatter or FormatterFactory.CLASSIFICATION.create()
 
-    def train(self, train_dataset_map: Dict[str, TraceDataset], losses, output_path, best_metric: str = None, *args, **kwargs) -> None:
-        assert isinstance(train_dataset_map, dict)
+    def train(self,
+              train_dataset: Dict[str, Dataset] | Dataset,
+              losses,
+              eval_dataset: TraceDataset = None,
+              output_path=None,
+              *args, **kwargs) -> None:
+        train_dataset = self._format_dataset(train_dataset)
 
         has_gpu = torch.cuda.is_available()
         args = SentenceTransformerTrainingArguments(
@@ -35,15 +51,22 @@ class STModel(ITraceModel):
             save_total_limit=2,
             logging_steps=1
         )
-        if best_metric:
+        if eval_dataset:
             args.eval_strategy = "epoch"
             args.eval_steps = 1
             args.load_best_model_at_end = True
-            args.metric_for_best_model = best_metric
+            args.metric_for_best_model = "evaluator_map"
+            kwargs["evaluator"] = RerankingEvaluator(
+                samples=create_samples(eval_dataset),
+                batch_size=BATCH_SIZE,
+                show_progress_bar=False,
+                write_csv=True,
+                name="evaluator"
+            )
 
         trainer = SentenceTransformerTrainer(self.get_model(),
                                              args=args,
-                                             train_dataset=train_dataset_map,
+                                             train_dataset=train_dataset,
                                              loss=losses,
                                              **kwargs)
         trainer.train()
@@ -68,3 +91,11 @@ class STModel(ITraceModel):
         if self._model is None:
             self._model = SentenceTransformer(self.model_name)
         return self._model
+
+    def _format_dataset(self, dataset: TraceDataset | Dict[str, TraceDataset]):
+        if isinstance(dataset, TraceDataset):
+            return self._formatter.format(dataset)
+        elif isinstance(dataset, dict):
+            return {k: self._formatter.format(d) for k, d in dataset.items()}
+        else:
+            raise Exception(f"Unsupported dataset type: {dataset}")

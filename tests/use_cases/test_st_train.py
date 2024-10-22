@@ -1,15 +1,13 @@
 import os.path
 
-from sentence_transformers.evaluation import RerankingEvaluator
 from sentence_transformers.losses import ContrastiveLoss
 
-from trace_model_trainer.constants import BATCH_SIZE
 from trace_model_trainer.eval.kfold import kfold
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
-from trace_model_trainer.eval.utils import create_samples, eval_model
-from trace_model_trainer.formatters.formatter_factory import FormatterFactory
+from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.readers.loader import load_traceability_dataset
+from trace_model_trainer.utils import clear_memory
 
 
 def main():
@@ -18,27 +16,16 @@ def main():
     splitter = SplitterFactory.QUERY.create(group_col="target")
 
     st_model = STModel("all-MiniLM-L6-v2")
-    st_formatter = FormatterFactory.CLASSIFICATION.create()
     for train_dataset, val_dataset, test_dataset in kfold(dataset, [0.60, 0.20, 0.20], splitter, 1):
         print("Before:", eval_model(st_model, test_dataset))
-        evaluator = RerankingEvaluator(
-            samples=create_samples(val_dataset),
-            batch_size=BATCH_SIZE,
-            show_progress_bar=False,
-            write_csv=True,
-            name="evaluator"
-        )
-        print("Before:", evaluator(st_model.get_model()))
-        losses = ContrastiveLoss(st_model.get_model())
-        train_dataset_map = {"train_dataset": st_formatter.format(train_dataset)}
-
-        st_model.train(train_dataset_map,
-                       losses,
+        loss = ContrastiveLoss(st_model.get_model())
+        st_model.train(train_dataset,
+                       loss,
                        output_path=test_output_path,
-                       evaluator=evaluator,
-                       best_metric="evaluator_map")
+                       eval_dataset=val_dataset)
         print("Done training")
         print("After:", eval_model(st_model, test_dataset))
+        clear_memory()
 
 
 if __name__ == '__main__':
