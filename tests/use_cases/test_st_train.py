@@ -16,7 +16,7 @@ def main():
     splitter = SplitterFactory.QUERY.create(group_col="target")
 
     st_model = STModel("all-MiniLM-L6-v2")
-    for train_dataset, val_dataset, test_dataset in kfold(dataset, [0.60, 0.20, 0.20], splitter, 1):
+    for train_dataset, val_dataset, test_dataset in kfold(dataset, [0.60, 0.20, 0.20], splitter, 1, [42]):
         print("Before:", eval_model(st_model, test_dataset))
         loss = ContrastiveLoss(st_model.get_model())
         st_model.train(train_dataset,

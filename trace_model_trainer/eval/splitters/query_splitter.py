@@ -14,7 +14,7 @@ class QuerySplitter(ISplitter):
     def __init__(self, group_col: str = "target"):
         self.group_cop = group_col
 
-    def split(self, dataset: TraceDataset, train_size: float) -> Tuple[TraceDataset, TraceDataset]:
+    def split(self, dataset: TraceDataset, train_size: float, random_seed: int = None) -> Tuple[TraceDataset, TraceDataset]:
         """
         Splits trace dataset so that entire artifacts are removed from the training set and put into the test set.
         :param dataset: The dataset to split.
@@ -28,7 +28,7 @@ class QuerySplitter(ISplitter):
             for t_id in target_ids:
                 query2items[t_id].extend(source_ids)
 
-        train_queries, test_queries = train_test_split(list(query2items.keys()), train_size=train_size)
+        train_queries, test_queries = train_test_split(list(query2items.keys()), train_size=train_size, random_state=random_seed)
 
         source2targets = create_source2targets(dataset.trace_df)
 
