@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from trace_model_trainer.readers.utils import get_content
+from trace_model_trainer.readers.types import Artifact
 from trace_model_trainer.utils import t_id_creator
 
 """"
@@ -19,7 +19,7 @@ class TraceDataset:
         :param trace_df: DataFrame containing trace links between artifacts.
         :param layer_df: DataFrame containing the types being traced (Artifact.layer)
         """
-        assert all(c in artifact_df.columns for c in ["id", "content", "summary"]), f"Result: {artifact_df.columns}"
+        assert all(c in artifact_df.columns for c in ["id", "content", "summary", "layer"]), f"Result: {artifact_df.columns}"
         assert all(c in trace_df.columns for c in ["source", "target"]), f"Result: {trace_df.columns}"
         assert all(c in layer_df.columns for c in ["source_type", "target_type"]), f"Result: {layer_df.columns}"
 
@@ -39,23 +39,6 @@ class TraceDataset:
         row = self.trace_df.iloc[idx]
         return row["source"], row["target"], row['label']
 
-    def get_layer_iterator(self, empty_ok: bool = False):
-        if len(self.layer_df) == 0 and not empty_ok:
-            raise Exception("Attempted to retrieve combination of traces, but no matrix defined.")
-
-        payload = []
-        for i, layer_row in self.layer_df.iterrows():
-            source_layer = layer_row["source_type"]
-            target_layer = layer_row["target_type"]
-
-            source_artifact_df = self.get_by_type(source_layer)
-            target_artifact_df = self.get_by_type(target_layer)
-
-            source_artifact_ids = source_artifact_df['id']
-            target_artifact_ids = target_artifact_df['id']
-            payload.append((source_artifact_ids, target_artifact_ids))
-        return payload
-
     def get_by_type(self, type_name: str) -> ArtifactDataFrame:
         return self.artifact_df[self.artifact_df['layer'] == type_name]
 
@@ -63,3 +46,15 @@ class TraceDataset:
 def filter_referenced_artifacts(trace_df, artifact_df):
     artifacts = set(artifact_df["id"].unique())
     return trace_df[trace_df["source"].isin(artifacts) & trace_df["target"].isin(artifacts)]
+
+
+def get_content(a: Artifact):
+    """
+    Returns summary of artifacts if exists otherwise returns its content.
+    :param a: Artifact to extract content for.
+    :return: Artifact content.
+    """
+    s = a.get("summary", None)
+    if isinstance(s, str) and len(s) > 0:
+        return s
+    return a["content"]

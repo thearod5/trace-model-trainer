@@ -5,6 +5,7 @@ from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 
 from trace_model_trainer.eval.splitters.isplitter import ISplitter
+from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.readers.trace_dataset import TraceDataset
 from trace_model_trainer.readers.types import TracePrediction
 from trace_model_trainer.utils import create_source2targets
@@ -24,7 +25,7 @@ class QuerySplitter(ISplitter):
         :return: Training set followed by testing set.
         """
         query2items = defaultdict(list)
-        for source_ids, target_ids in dataset.get_layer_iterator():
+        for source_ids, target_ids in trace_iterator(dataset):
             for t_id in target_ids:
                 query2items[t_id].extend(source_ids)
 

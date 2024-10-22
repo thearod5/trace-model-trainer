@@ -4,6 +4,7 @@ from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 
 from trace_model_trainer.eval.splitters.isplitter import ISplitter
+from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.readers.trace_dataset import ArtifactDataFrame, TraceDataFrame, TraceDataset
 from trace_model_trainer.readers.types import TracePrediction
 from trace_model_trainer.utils import create_source2targets
@@ -20,7 +21,7 @@ class LinkSplitter(ISplitter):
         source2targets = create_source2targets(dataset.trace_df)
         traces = []
         # TODO: This operation is getting repeated now.
-        for source_ids, target_ids in dataset.get_layer_iterator():
+        for source_ids, target_ids in trace_iterator(dataset):
             for s_id in source_ids:
                 for t_id in target_ids:
                     traces.append(TracePrediction(

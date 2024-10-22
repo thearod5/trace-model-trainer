@@ -3,6 +3,7 @@ from typing import Dict, List
 
 from sklearn.metrics import average_precision_score, ndcg_score
 
+from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.models.itrace_model import ITraceModel
 from trace_model_trainer.readers.trace_dataset import TraceDataset
 from trace_model_trainer.readers.types import TracePrediction
@@ -84,7 +85,7 @@ def calculate_ndcg(query2preds: Dict[str, List[TracePrediction]]):
 
 def compute_model_predictions(vsm_controller: ITraceModel, dataset: TraceDataset):
     predictions = []
-    for source_ids, target_ids in dataset.get_layer_iterator():
+    for source_ids, target_ids in trace_iterator(dataset):
         source_texts = [dataset.artifact_map[a_id] for a_id in source_ids]
         target_texts = [dataset.artifact_map[a_id] for a_id in target_ids]
 
@@ -115,7 +116,7 @@ def aggregate_metrics(metrics: List[Dict]) -> Dict:
 def create_samples(trace_dataset: TraceDataset):
     target_queries = {}
     trace_map = create_source2targets(trace_dataset.trace_df)
-    for source_artifact_ids, target_artifact_ids in trace_dataset.get_layer_iterator():
+    for source_artifact_ids, target_artifact_ids in trace_iterator(trace_dataset):
         for s_id in source_artifact_ids:
             for t_id in target_artifact_ids:
                 if t_id not in target_queries:

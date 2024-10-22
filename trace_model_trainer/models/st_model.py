@@ -30,11 +30,13 @@ class STModel(ITraceModel):
               losses,
               eval_dataset: TraceDataset = None,
               output_path=None,
-              *args, **kwargs) -> None:
+              args: Dict = None,
+              **kwargs) -> None:
         train_dataset = self._format_dataset(train_dataset)
+        args = args or {}
 
         has_gpu = torch.cuda.is_available()
-        args = SentenceTransformerTrainingArguments(
+        trainer_args = SentenceTransformerTrainingArguments(
             # Required parameter:
             output_dir=output_path,
             # Optional training parameters:
@@ -49,13 +51,15 @@ class STModel(ITraceModel):
             save_strategy="epoch",
             save_steps=1,
             save_total_limit=2,
-            logging_steps=1
+            logging_steps=1,
+            report_to=None
         )
+
         if eval_dataset:
-            args.eval_strategy = "epoch"
-            args.eval_steps = 1
-            args.load_best_model_at_end = True
-            args.metric_for_best_model = "evaluator_map"
+            trainer_args.eval_strategy = "epoch"
+            trainer_args.eval_steps = 1
+            trainer_args.load_best_model_at_end = True
+            trainer_args.metric_for_best_model = "evaluator_map"
             kwargs["evaluator"] = RerankingEvaluator(
                 samples=create_samples(eval_dataset),
                 batch_size=BATCH_SIZE,
@@ -64,8 +68,11 @@ class STModel(ITraceModel):
                 name="evaluator"
             )
 
+        for k, v in args.items():
+            setattr(trainer_args, k, v)
+
         trainer = SentenceTransformerTrainer(self.get_model(),
-                                             args=args,
+                                             args=trainer_args,
                                              train_dataset=train_dataset,
                                              loss=losses,
                                              **kwargs)

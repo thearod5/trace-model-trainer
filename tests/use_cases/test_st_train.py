@@ -22,7 +22,9 @@ def main():
         st_model.train(train_dataset,
                        loss,
                        output_path=test_output_path,
-                       eval_dataset=val_dataset)
+                       eval_dataset=val_dataset,
+                       args={"num_train_epochs": 1}
+                       )
         print("Done training")
         print("After:", eval_model(st_model, test_dataset))
         clear_memory()
