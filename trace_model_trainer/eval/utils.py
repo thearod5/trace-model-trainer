@@ -3,7 +3,6 @@ from typing import Dict, List
 
 from sklearn.metrics import average_precision_score, ndcg_score
 
-from trace_model_trainer.formatters.triplet_formatter import TripletFormatter
 from trace_model_trainer.models.itrace_model import ITraceModel
 from trace_model_trainer.readers.trace_dataset import TraceDataset
 from trace_model_trainer.readers.types import TracePrediction
@@ -114,7 +113,18 @@ def aggregate_metrics(metrics: List[Dict]) -> Dict:
 
 
 def create_samples(trace_dataset: TraceDataset):
-    formatter = TripletFormatter()
-    dataset = formatter.format(trace_dataset)
-    dataset = dataset.rename_columns({"anchor": "query"})
-    return dataset
+    target_queries = {}
+    trace_map = create_source2targets(trace_dataset.trace_df)
+    for source_artifact_ids, target_artifact_ids in trace_dataset.get_layer_iterator():
+        for s_id in source_artifact_ids:
+            for t_id in target_artifact_ids:
+                if t_id not in target_queries:
+                    target_queries[t_id] = {"positive": [], "negative": []}
+                label = trace_map[s_id].get(t_id, 0)
+                if label == 0:
+                    target_queries[t_id]["negative"].append(s_id)
+                else:
+                    target_queries[t_id]['positive'].append(s_id)
+
+    samples = [{"query": k, **v} for k, v in target_queries.items() if len(v["positive"]) > 0]
+    return samples
