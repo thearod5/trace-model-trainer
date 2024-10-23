@@ -102,27 +102,24 @@ def compute_model_predictions(trace_model: ITraceModel, dataset: TraceDataset):
     return predictions
 
 
-def aggregate_metrics(metrics: List[Dict]) -> Dict:
+def aggregate_metrics(metrics: List[Dict], exclude_group: str = "seed") -> DataFrame:
     """
     Takes list of metrics and computes the average value for each metric.
     :param metrics: List of metrics.
     :return: Map of metric name to average value.
     """
-    group_cols = [k for k, v in metrics[0].items() if isinstance(v, str)]
+    group_cols = [k for k, v in metrics[0].items() if isinstance(v, str) and k != exclude_group]
+    value_cols = [k for k, v in metrics[0].items() if isinstance(v, float) or isinstance(v, int)]
     metric_df = DataFrame(metrics)
 
+    entries = []
     for group, group_df in metric_df.groupby(group_cols):
-        print("Hi")
+        value_dict = {v: group_df[v].mean() for v in value_cols}
+        key_dict = {k: v for k, v in zip(group_cols, group)}
+        entry = {**key_dict, **value_dict}
+        entries.append(entry)
 
-    agg = defaultdict(list)
-    for m in metrics:
-        for k, v in m.items():
-            agg[k].append(v)
-
-    final = {}
-    for k, v in agg.items():
-        final[k] = sum(v) / len(v)
-    return final
+    return DataFrame(entries)
 
 
 def create_samples(trace_dataset: TraceDataset):
