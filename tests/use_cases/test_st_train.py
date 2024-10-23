@@ -20,23 +20,23 @@ def main():
     context.log_dataset(dataset, "dataset")
 
     st_model = STModel("all-MiniLM-L6-v2")
-    for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [0.60, 0.20, 0.20], splitter, 1, [42]):
+    for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [0.20, 0.20, 0.60], splitter, 1, [42]):
         context.set_base_path(f"seed={seed}")
+        context.log_dataset(test_dataset, "test")
+        context.log_dataset(train_dataset, "train")
 
         predictions, metrics = eval_model(st_model, test_dataset)
         context.log_metrics(metrics, trial="before")
-        context.log_dataset(test_dataset, "test")
 
         loss = ContrastiveLoss(st_model.get_model())
         st_model.train(train_dataset,
                        loss,
-                       output_path=test_output_path,
+                       output_path=context.get_relative_path("model"),
                        eval_dataset=val_dataset,
                        args={"num_train_epochs": 1}
                        )
         predictions, metrics = eval_model(st_model, test_dataset)
         context.log_metrics(metrics, trial="before")
-        context.log_dataset(test_dataset, "test")
 
         clear_memory()
 

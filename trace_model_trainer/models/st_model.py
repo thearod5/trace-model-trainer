@@ -83,6 +83,7 @@ class STModel(ITraceModel):
                                              **kwargs)
         trainer.train()
         self._model = trainer.model
+        return trainer
 
     def predict(self, sources: List[str], targets: List[str]) -> SimilarityMatrix:
         """
