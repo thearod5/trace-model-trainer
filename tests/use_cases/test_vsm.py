@@ -27,7 +27,7 @@ def main():
     vsm_model = VSMModel()
     i = 0
     for train_dataset, test_dataset in kfold(dataset, [0.80, 0.20], splitter, 3):
-        context.init_run(f"run{i + 1}")
+        context.init_run()
         context.log_dataset(test_dataset)
         context.save_json({"vsm_test": True}, "config.json")
 

@@ -17,8 +17,10 @@ class EvaluationContext:
         self.dataset_dir_name = dataset_dir_name
         self.metric_name = metric_name
         self.run_name = None
+        self.n_runs = 0
 
-    def init_run(self, run_name: str):
+    def init_run(self, run_name: str = None):
+        self.run_name = run_name or f"run{self.n_runs + 1}"
         self.run_name = None
         run_path = self.get_relative_path(run_name)
         self.run_name = run_name
