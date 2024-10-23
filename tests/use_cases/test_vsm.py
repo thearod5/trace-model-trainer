@@ -28,7 +28,8 @@ def main():
     i = 0
     for train_dataset, test_dataset in kfold(dataset, [0.80, 0.20], splitter, 3):
         context.init_run()
-        context.log_dataset(test_dataset)
+        context.log_dataset(train_dataset, "train_data")
+        context.log_dataset(test_dataset, "test_data")
         context.save_json({"vsm_test": True}, "config.json")
 
         vsm_model.train(train_dataset)
@@ -38,7 +39,7 @@ def main():
         context.log_metrics(**vsm_test_metrics)
         i += 1
 
-    context.done()
+    context.save_metrics("metrics.csv")
 
 
 if __name__ == '__main__':
