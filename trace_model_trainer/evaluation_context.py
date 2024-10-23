@@ -26,17 +26,19 @@ class EvaluationContext:
     def log_dataset(self, dataset: TraceDataset, dir_name: str) -> None:
         TraceDatasetExporter.export(dataset, self.get_relative_path(dir_name))
 
-    def log_metrics(self, **kwargs) -> None:
+    def log_metrics(self, metrics: Dict, **kwargs) -> None:
         if self.run_name:
             kwargs["run"] = self.run_name
-        self.metrics.append(kwargs)
+        entry = {**metrics, **kwargs}
+        self.metrics.append(entry)
 
     def save_json(self, content: Dict, file_name: str, pretty: bool = False) -> None:
         write_json(content, self.get_relative_path(file_name), pretty=pretty)
 
-    def save_metrics(self, file_name: str) -> None:
+    def save_metrics(self, file_name: str, clear_run: bool = True) -> None:
         assert file_name.endswith(".csv"), f"File name ({file_name}) must end with .csv"
-        self.run_name = None
+        if clear_run:
+            self.run_name = None
         metric_df = DataFrame(self.metrics)
         metric_df.to_csv(self.get_relative_path(file_name), index=False)
 
