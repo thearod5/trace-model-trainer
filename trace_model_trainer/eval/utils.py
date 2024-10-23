@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List, Tuple
 
+from pandas import DataFrame
 from sklearn.metrics import average_precision_score, ndcg_score
 
 from trace_model_trainer.eval.trace_iterator import trace_iterator
@@ -107,6 +108,12 @@ def aggregate_metrics(metrics: List[Dict]) -> Dict:
     :param metrics: List of metrics.
     :return: Map of metric name to average value.
     """
+    group_cols = [k for k, v in metrics[0].items() if isinstance(v, str)]
+    metric_df = DataFrame(metrics)
+
+    for group, group_df in metric_df.groupby(group_cols):
+        print("Hi")
+
     agg = defaultdict(list)
     for m in metrics:
         for k, v in m.items():

@@ -32,8 +32,6 @@ class EvaluationContext:
         TraceDatasetExporter.export(dataset, self.get_relative_path(dir_name))
 
     def log_metrics(self, metrics: Dict, **kwargs) -> None:
-        if self.run_name:
-            kwargs["run"] = self.run_name
         entry = {**metrics, **kwargs}
         self.metrics.append(entry)
 
