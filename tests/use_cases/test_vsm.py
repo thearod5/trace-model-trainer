@@ -13,7 +13,7 @@ from trace_model_trainer.utils import group_by
 
 
 def main():
-    OUTPUT_PATH = "~/projects/trace-model-trainer/output"
+    OUTPUT_PATH = "~/projects/trace-model-trainer/output/vsm_test"
 
     if os.path.exists(OUTPUT_PATH):
         shutil.rmtree(OUTPUT_PATH)
@@ -36,7 +36,7 @@ def main():
 
         predictions, vsm_test_metrics = eval_model(vsm_model, test_dataset)
         context.save_json(group_by(predictions, "target"), "predictions.json")
-        context.log_metrics(**vsm_test_metrics)
+        context.log_metrics(vsm_test_metrics, trial="dummy")
         i += 1
 
     context.save_metrics("metrics.csv")

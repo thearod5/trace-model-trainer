@@ -13,7 +13,6 @@ from trace_model_trainer.utils import create_source2targets, write_json
 def eval_model(model: ITraceModel, dataset: TraceDataset, save_prediction_path: str = None) -> Tuple[List[TracePrediction], Dict]:
     # Create map for easy lookup to attach label later.
     source2target = create_source2targets(dataset.trace_df)
-
     predictions = compute_model_predictions(model, dataset)
 
     # Optional - Save predictions
@@ -88,16 +87,17 @@ def calculate_ndcg(query2preds: Dict[str, List[TracePrediction]]):
     return sum(ndcg_scores) / len(ndcg_scores)
 
 
-def compute_model_predictions(vsm_controller: ITraceModel, dataset: TraceDataset):
+def compute_model_predictions(trace_model: ITraceModel, dataset: TraceDataset):
     predictions = []
     for source_ids, target_ids in trace_iterator(dataset):
         source_texts = [dataset.artifact_map[a_id] for a_id in source_ids]
         target_texts = [dataset.artifact_map[a_id] for a_id in target_ids]
 
-        similarity_matrix = vsm_controller.predict(source_texts, target_texts)
+        similarity_matrix = trace_model.predict(source_texts, target_texts)
         for s_index, s_id in enumerate(source_ids):
             for t_index, t_id in enumerate(target_ids):
-                predictions.append(TracePrediction(source=s_id, target=t_id, label=None, score=similarity_matrix[s_index][t_index]))
+                score = similarity_matrix[s_index][t_index]
+                predictions.append(TracePrediction(source=s_id, target=t_id, label=None, score=score))
     return predictions
 
 

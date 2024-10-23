@@ -92,7 +92,7 @@ class STModel(ITraceModel):
         source_embeddings = [embedding_map[s] for s in sources]
         target_embeddings = [embedding_map[t] for t in targets]
         similarity_matrix = cos_sim(source_embeddings, target_embeddings)
-        return similarity_matrix
+        return similarity_matrix.numpy()
 
     def get_model(self) -> SentenceTransformer:
         if self._model is None:
