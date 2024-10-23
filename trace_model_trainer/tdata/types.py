@@ -1,7 +1,13 @@
+import dataclasses
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, TypedDict
 
 import pandas as pd
+
+
+class JsonSerializableMixin:
+    def __json__(self):
+        return dataclasses.asdict(self)
 
 
 @dataclass
@@ -20,7 +26,7 @@ class Artifact(TypedDict):
 
 
 @dataclass
-class TracePrediction:
+class TracePrediction(JsonSerializableMixin):
     source: str
     target: str
     label: Optional[int]
@@ -33,3 +39,9 @@ class TracePrediction:
             "score": self.score,
             "label": self.label
         }
+
+    def __json__(self):
+        return dataclasses.asdict(self)
+
+    def __dict__(self):
+        return dataclasses.asdict(self)

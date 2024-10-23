@@ -5,8 +5,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
-from trace_model_trainer.readers.trace_dataset import TraceDataset
-from trace_model_trainer.readers.types import TracePrediction
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.types import TracePrediction
 
 prepositions = {
     'aboard', 'about', 'above', 'across', 'after', 'against', 'along', 'amid', 'among', 'anti', 'around', 'as', 'at',

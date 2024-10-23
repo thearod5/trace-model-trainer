@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from trace_model_trainer.readers.types import Artifact
+from trace_model_trainer.tdata.types import Artifact
 from trace_model_trainer.utils import t_id_creator
 
 """"

@@ -2,7 +2,7 @@ from datasets import Dataset
 from sentence_transformers.losses import ContrastiveTensionDataLoader
 
 from trace_model_trainer.formatters.iformatter import IFormatter
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 class ContrastiveTensionFormatter(IFormatter):

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 SimilarityMatrix = List[List[float]]
 

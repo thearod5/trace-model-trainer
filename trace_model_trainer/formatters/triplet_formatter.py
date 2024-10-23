@@ -5,7 +5,7 @@ from datasets import Dataset
 
 from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.formatters.iformatter import IFormatter
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 from trace_model_trainer.utils import create_source2targets
 
 

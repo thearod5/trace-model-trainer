@@ -9,7 +9,7 @@ from transformers import AutoModelForMaskedLM, AutoTokenizer, DataCollatorForLan
 
 from trace_model_trainer.constants import BATCH_SIZE, DEFAULT_MLM_MODEL, N_EPOCHS
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 DEFAULT_BLOCK_SIZE = 128
 

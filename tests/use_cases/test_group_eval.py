@@ -4,7 +4,7 @@ from trace_model_trainer.eval.utils import aggregate_metrics, eval_model
 from trace_model_trainer.models.mlm_model import MLMModel
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.models.vsm_model import VSMModel
-from trace_model_trainer.readers.loader import load_traceability_dataset
+from trace_model_trainer.tdata.loader import load_traceability_dataset
 
 
 def main():

@@ -3,7 +3,7 @@ from unittest import TestCase
 from pandas import DataFrame
 
 from trace_model_trainer.eval.splitters.query_splitter import QuerySplitter
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 class TestQuerySplitter(TestCase):

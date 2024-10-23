@@ -2,7 +2,7 @@ import random
 from typing import List
 
 from trace_model_trainer.eval.splitters.isplitter import ISplitter
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 def kfold(dataset: TraceDataset,

@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 def trace_iterator(dataset: TraceDataset, empty_ok: bool = False) -> List[Tuple[str, str]]:

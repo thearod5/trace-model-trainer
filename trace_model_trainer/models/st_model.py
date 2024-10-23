@@ -11,7 +11,7 @@ from trace_model_trainer.eval.utils import create_samples
 from trace_model_trainer.formatters.formatter_factory import FormatterFactory
 from trace_model_trainer.formatters.iformatter import IFormatter
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 class STModel(ITraceModel):

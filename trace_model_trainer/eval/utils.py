@@ -1,20 +1,24 @@
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from sklearn.metrics import average_precision_score, ndcg_score
 
 from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.models.itrace_model import ITraceModel
-from trace_model_trainer.readers.trace_dataset import TraceDataset
-from trace_model_trainer.readers.types import TracePrediction
-from trace_model_trainer.utils import create_source2targets
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.types import TracePrediction
+from trace_model_trainer.utils import create_source2targets, write_json
 
 
-def eval_model(model: ITraceModel, dataset: TraceDataset) -> Dict:
+def eval_model(model: ITraceModel, dataset: TraceDataset, save_prediction_path: str = None) -> Tuple[List[TracePrediction], Dict]:
     # Create map for easy lookup to attach label later.
     source2target = create_source2targets(dataset.trace_df)
 
     predictions = compute_model_predictions(model, dataset)
+
+    # Optional - Save predictions
+    if save_prediction_path is not None:
+        write_json({"predictions": predictions}, save_prediction_path)
 
     # Add labels to predictions
     for pred in predictions:
@@ -26,7 +30,8 @@ def eval_model(model: ITraceModel, dataset: TraceDataset) -> Dict:
     map_score = calculate_map(query2preds)
     mrr_score = calculate_mrr(query2preds)
     ndcg_score = calculate_ndcg(query2preds)
-    return {"map": map_score, "mrr": mrr_score, "ndcg": ndcg_score}
+    metrics = {"map": map_score, "mrr": mrr_score, "ndcg": ndcg_score}
+    return predictions, metrics
 
 
 def _group_predictions(predictions: List[TracePrediction]):

@@ -1,16 +1,16 @@
 import os.path
 from typing import Literal
 
-from datasets import Dataset, DownloadMode, load_dataset
+from datasets import Dataset, load_dataset
 from pandas import DataFrame
 
-from trace_model_trainer.readers.reader import read_project
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.reader import read_project
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 DatasetTypes = Literal["train", "traceability"]
 
 
-def load_traceability_dataset(dataset_name: str) -> TraceDataset:
+def load_traceability_dataset(dataset_name: str, **kwargs) -> TraceDataset:
     """
     Loads traceability training dataset
     :param dataset_name: The name of dataset or path to it.
@@ -18,9 +18,9 @@ def load_traceability_dataset(dataset_name: str) -> TraceDataset:
     """
     if os.path.exists(dataset_name):
         return read_project(dataset_name)
-    artifacts = load_dataset(dataset_name, "artifacts", download_mode=DownloadMode.FORCE_REDOWNLOAD)
-    traces = load_dataset(dataset_name, "traces")
-    matrices = load_dataset(dataset_name, "matrices")
+    artifacts = load_dataset(dataset_name, "artifacts", **kwargs)
+    traces = load_dataset(dataset_name, "traces", **kwargs)
+    matrices = load_dataset(dataset_name, "matrices", **kwargs)
 
     artifacts = artifacts["train"] if "train" in artifacts else artifacts["artifacts"]
     traces = traces["train"] if "train" in traces else traces["traces"]

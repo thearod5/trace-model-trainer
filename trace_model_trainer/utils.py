@@ -2,18 +2,23 @@ import gc
 import inspect
 import json
 from collections import defaultdict
-from typing import List
+from typing import Dict, List
 
 import torch
 from pandas import DataFrame
 from sklearn.preprocessing import minmax_scale
 
-from trace_model_trainer.readers.types import TracePrediction
+from trace_model_trainer.tdata.types import TracePrediction
 
 
 def read_json(f):
     with open(f) as file_pointer:
         return json.load(file_pointer)
+
+
+def write_json(content: dict, save_path: str, pretty: bool = False):
+    with open(save_path, 'w') as file_pointer:
+        json.dump(content, fp=file_pointer, default=lambda o: o.__json__(), indent=4 if pretty else None)
 
 
 def t_id_creator(trace_row=None, source=None, target=None):
@@ -77,6 +82,15 @@ def create_predictions_from_matrix(sources: List[str], targets: List[str], simil
             prediction = TracePrediction(source=source, target=target, label=None, score=score)
             predictions.append(prediction)
     return predictions
+
+
+def group_by(items: List[Dict], group_key: str) -> Dict[str, List[Dict]]:
+    is_dict = isinstance(items[0], dict)
+    group2items = defaultdict(list)
+    for item in items:
+        group = item[group_key] if is_dict else getattr(item, group_key)
+        group2items[group].append(item)
+    return group2items
 
 
 """

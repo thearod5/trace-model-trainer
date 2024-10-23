@@ -4,7 +4,7 @@ from typing import Dict, Iterable
 import pandas as pd
 from pandas import DataFrame
 
-from trace_model_trainer.readers.trace_dataset import TraceDataset
+from trace_model_trainer.tdata.trace_dataset import TraceDataset
 from trace_model_trainer.utils import has_param, read_json
 
 
@@ -12,6 +12,13 @@ def read_project(project_path: str, disable_logs: bool = False) -> TraceDataset:
     if not os.path.exists(project_path):
         raise Exception(f"Project path does not contain files:{project_path}")
     project_path = os.path.abspath(project_path)
+
+    if all([os.path.exists(os.path.join(project_path, f)) for f in ["artifacts.csv", "traces.csv", "matrices.csv"]]):
+        return TraceDataset(
+            artifact_df=pd.read_csv(os.path.join(project_path, "artifacts.csv")),
+            trace_df=pd.read_csv(os.path.join(project_path, "traces.csv")),
+            layer_df=pd.read_csv(os.path.join(project_path, "matrices.csv"))
+        )
 
     tim = read_tim(project_path)
 
@@ -26,6 +33,16 @@ def read_project(project_path: str, disable_logs: bool = False) -> TraceDataset:
         print("Artifacts:", len(artifact_df))
         print("Traces:", len(trace_df))
     return TraceDataset(artifact_df, trace_df, layer_df)
+
+
+def read_safa_project(project_path):
+    tim = read_tim(project_path)
+    file2layer = {a['fileName']: a['type'] for a in tim["artifacts"]}
+    file2traced_layers = {f['fileName']: (f['sourceType'], f['targetType']) for f in tim["traces"]}
+    layer_df = DataFrame(file2traced_layers.values())
+    artifact_df = create_artifact_df(project_path, file2layer)
+    trace_df = create_trace_df(project_path, file2traced_layers.keys())
+    return artifact_df, layer_df, trace_df
 
 
 def create_artifact_df(project_path: str, file2layer: Dict[str, str]):

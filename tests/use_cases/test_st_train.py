@@ -6,7 +6,7 @@ from trace_model_trainer.eval.kfold import kfold
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.models.st_model import STModel
-from trace_model_trainer.readers.loader import load_traceability_dataset
+from trace_model_trainer.tdata.loader import load_traceability_dataset
 from trace_model_trainer.utils import clear_memory
 
 
