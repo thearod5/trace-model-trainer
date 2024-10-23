@@ -50,9 +50,22 @@ class EvaluationContext:
         self.run_name = None
 
     def get_relative_path(self, *sub_paths) -> str:
+        """
+        Creates path relative to current logging directory.
+        :param sub_paths: Sub paths to append to path.
+        :return: Constructed path.
+        """
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path, exist_ok=True)
+        base_path = self.get_base_path()
+        return os.path.join(base_path, *sub_paths)
+
+    def get_base_path(self):
+        """
+        Returns the base path of the current logging directory.
+        :return: Path to directory.
+        """
         base_path = self.output_path
         if self.run_name:
             base_path = os.path.join(self.output_path, self.run_name)
-        return os.path.join(base_path, *sub_paths)
+        return base_path
