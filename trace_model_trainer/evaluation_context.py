@@ -15,11 +15,16 @@ class EvaluationContext:
         self.run_name = None
         self.n_runs = 0
 
-    def init_run(self, run_name: str = None):
-        run_name = run_name or f"run{self.n_runs + 1}"
+    def set_base_path(self, base_path: str = None) -> None:
+        """
+        Sets the current path (within output path) to start logging to.
+        :param base_path: Path within output path to point current logging directory.
+        :return: None
+        """
+        base_path = base_path or f"run{self.n_runs + 1}"
         self.run_name = None
-        run_path = self.get_relative_path(run_name)
-        self.run_name = run_name
+        run_path = self.get_relative_path(base_path)
+        self.run_name = base_path
         os.makedirs(run_path, exist_ok=True)
         self.n_runs += 1
 

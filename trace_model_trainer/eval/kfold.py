@@ -13,7 +13,7 @@ def kfold(dataset: TraceDataset,
     for fold_index in range(n_folds):
         random_seed = random_seeds[fold_index] if random_seeds else random.randint(1, 10000)
         splits = _create_splits(dataset, split_sizes, splitter, random_seed=random_seed)
-        yield splits
+        yield *splits, random_seed
 
 
 def _create_splits(dataset: TraceDataset, split_sizes: List[float], splitter: ISplitter, **kwargs) -> List[TraceDataset]:
