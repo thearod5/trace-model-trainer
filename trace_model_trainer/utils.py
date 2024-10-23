@@ -1,6 +1,8 @@
 import gc
 import inspect
 import json
+import os
+import shutil
 from collections import defaultdict
 from typing import Dict, List
 
@@ -91,6 +93,12 @@ def group_by(items: List[Dict], group_key: str) -> Dict[str, List[Dict]]:
         group = item[group_key] if is_dict else getattr(item, group_key)
         group2items[group].append(item)
     return group2items
+
+
+def clear_dir(dir_path: str) -> None:
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+        os.makedirs(dir_path)
 
 
 """

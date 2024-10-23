@@ -1,5 +1,4 @@
 import os.path
-import shutil
 
 from datasets import DownloadMode
 
@@ -9,15 +8,13 @@ from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
 from trace_model_trainer.models.vsm_model import VSMModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
-from trace_model_trainer.utils import group_by
+from trace_model_trainer.utils import clear_dir, group_by
 
 
 def main():
     OUTPUT_PATH = "~/projects/trace-model-trainer/output/vsm_test"
 
-    if os.path.exists(OUTPUT_PATH):
-        shutil.rmtree(OUTPUT_PATH)
-        os.makedirs(OUTPUT_PATH)
+    clear_dir(OUTPUT_PATH)
 
     context = EvaluationContext(os.path.expanduser(OUTPUT_PATH))
 
