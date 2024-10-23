@@ -1,3 +1,4 @@
+import os
 from typing import Dict, List
 
 import torch
@@ -39,6 +40,7 @@ class STModel(ITraceModel):
         trainer_args = SentenceTransformerTrainingArguments(
             # Required parameter:
             output_dir=output_path,
+
             # Optional training parameters:
             num_train_epochs=N_EPOCHS,
             per_device_train_batch_size=BATCH_SIZE,
@@ -47,11 +49,14 @@ class STModel(ITraceModel):
             warmup_ratio=0.1,
             fp16=DEFAULT_FP16 and has_gpu,  # Set to False if you get an error that your GPU can't run on FP16
             bf16=False,  # Set to True if you have a GPU that supports BF16
+            # Logging
+            logging_dir=os.path.join(output_path, "logs"),
+            logging_strategy="epoch",
+            logging_steps=1,
             # Optional tracking/debugging parameters:
             save_strategy="epoch",
             save_steps=1,
             save_total_limit=2,
-            logging_steps=1,
             report_to=None
         )
 

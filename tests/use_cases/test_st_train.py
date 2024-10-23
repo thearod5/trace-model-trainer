@@ -20,8 +20,8 @@ def main():
     context.log_dataset(dataset, "dataset")
 
     st_model = STModel("all-MiniLM-L6-v2")
-    for train_dataset, val_dataset, test_dataset in kfold(dataset, [0.60, 0.20, 0.20], splitter, 1, [42]):
-        context.set_base_path()
+    for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [0.60, 0.20, 0.20], splitter, 1, [42]):
+        context.set_base_path(f"seed={seed}")
 
         predictions, metrics = eval_model(st_model, test_dataset)
         context.log_metrics(metrics, trial="before")
@@ -40,7 +40,8 @@ def main():
 
         clear_memory()
 
-    context.save_metrics("metrics.csv")
+    metric_df = context.get_metrics()
+    context.log_df(metric_df, "metrics.csv")
 
 
 if __name__ == '__main__':
