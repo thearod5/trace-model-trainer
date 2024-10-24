@@ -1,18 +1,37 @@
 import os
 from typing import Dict, List
 
+import numpy as np
 import torch
 from datasets import Dataset
 from sentence_transformers import SentenceTransformer, SentenceTransformerTrainer, SentenceTransformerTrainingArguments
 from sentence_transformers.evaluation import RerankingEvaluator
+from sentence_transformers.training_args import BatchSamplers
 from sentence_transformers.util import cos_sim
+from torch.utils.data import WeightedRandomSampler
 
 from trace_model_trainer.constants import BATCH_SIZE, DEFAULT_FP16, DEFAULT_ST_MODEL, LEARNING_RATE, N_EPOCHS
 from trace_model_trainer.eval.utils import create_samples
 from trace_model_trainer.formatters.formatter_factory import FormatterFactory
 from trace_model_trainer.formatters.iformatter import IFormatter
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
+from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
+
+
+def create_sampler(dataset):
+    # Assume labels is a list or numpy array of 0s and 1s
+    df = dataset.to_pandas()
+    labels = np.array(df["label"])
+
+    # Calculate weights for undersampling
+    class_sample_count = np.array([len(np.where(labels == t)[0]) for t in np.unique(labels)])
+    weight = 1. / class_sample_count
+    samples_weight = np.array([weight[t] for t in labels])
+
+    # Create sampler
+    sampler = WeightedRandomSampler(weights=samples_weight, num_samples=len(labels), replacement=True)
+    return sampler
 
 
 class STModel(ITraceModel):
@@ -32,7 +51,8 @@ class STModel(ITraceModel):
               eval_dataset: TraceDataset = None,
               output_path=None,
               args: Dict = None,
-              **kwargs) -> None:
+              balance: bool = True,
+              **kwargs) -> SentenceTransformerTrainer:
         train_dataset = self._format_dataset(train_dataset)
         args = args or {}
 
@@ -57,7 +77,8 @@ class STModel(ITraceModel):
             save_strategy="epoch",
             save_steps=1,
             save_total_limit=2,
-            report_to=None
+            report_to=None,
+            batch_sampler=BatchSamplers.NO_DUPLICATES
         )
 
         if eval_dataset:
@@ -76,11 +97,13 @@ class STModel(ITraceModel):
         for k, v in args.items():
             setattr(trainer_args, k, v)
 
-        trainer = SentenceTransformerTrainer(self.get_model(),
-                                             args=trainer_args,
-                                             train_dataset=train_dataset,
-                                             loss=losses,
-                                             **kwargs)
+        trainer_class = BalancedTrainer if balance else SentenceTransformerTrainer
+        trainer = trainer_class(self.get_model(),
+                                args=trainer_args,
+                                train_dataset=train_dataset,
+                                loss=losses,
+                                **kwargs)
+
         trainer.train()
         self._model = trainer.model
         return trainer

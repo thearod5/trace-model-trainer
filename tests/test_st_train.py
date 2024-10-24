@@ -33,7 +33,7 @@ def main():
                        loss,
                        output_path=context.get_relative_path("model"),
                        eval_dataset=val_dataset,
-                       args={"num_train_epochs": 1}
+                       args={"num_train_epochs": 2, "enable_full_determinism": True, "seed": seed}
                        )
         predictions, metrics = eval_model(st_model, test_dataset)
         context.log_metrics(metrics, trial="before")
