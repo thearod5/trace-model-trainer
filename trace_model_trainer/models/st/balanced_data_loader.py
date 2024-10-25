@@ -8,14 +8,12 @@ from trace_model_trainer.constants import BATCH_SIZE
 class BalancedSampler(Sampler):
     def __init__(self, dataset: Dataset, neg_sample_ratio: float = 1, batch_size=BATCH_SIZE):
         super().__init__(dataset)
-        train_df = dataset.to_pandas()
+        df = dataset.to_pandas()
         self.dataset = dataset
-        self.pos_indices = train_df[train_df["label"] == 1].index.to_list()
-        self.neg_indices = train_df[train_df["label"] == 0].index.to_list()
+        self.pos_indices = df[df["label"] == 1].index.to_list()
+        self.neg_indices = df[df["label"] == 0].index.to_list()
         self.neg_sample_ratio = neg_sample_ratio
         self.batch_size = batch_size
-        print("Pos", len(self.pos_indices))
-        print("Ratio: ", len(self.pos_indices) / len(self.neg_indices))
 
     def __iter__(self):
         """

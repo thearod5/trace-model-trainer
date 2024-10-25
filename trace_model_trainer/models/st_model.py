@@ -8,7 +8,7 @@ from sentence_transformers.evaluation import RerankingEvaluator
 from sentence_transformers.training_args import BatchSamplers
 from sentence_transformers.util import cos_sim
 
-from trace_model_trainer.constants import BATCH_SIZE, DEFAULT_FP16, DEFAULT_ST_MODEL, LEARNING_RATE, N_EPOCHS
+from trace_model_trainer.constants import BATCH_SIZE, DEFAULT_FP16, DEFAULT_ST_MODEL, N_EPOCHS
 from trace_model_trainer.eval.utils import create_samples
 from trace_model_trainer.formatters.formatter_factory import FormatterFactory
 from trace_model_trainer.formatters.iformatter import IFormatter
@@ -40,15 +40,15 @@ class STModel(ITraceModel):
         args = args or {}
 
         has_gpu = torch.cuda.is_available()
+        learning_rate = 5e-5 * (BATCH_SIZE / 8)
         trainer_args = SentenceTransformerTrainingArguments(
             # Required parameter:
             output_dir=output_path,
-
             # Optional training parameters:
             num_train_epochs=N_EPOCHS,
             per_device_train_batch_size=BATCH_SIZE,
             per_device_eval_batch_size=BATCH_SIZE,
-            learning_rate=LEARNING_RATE,
+            learning_rate=learning_rate,
             warmup_ratio=0.1,
             fp16=DEFAULT_FP16 and has_gpu,  # Set to False if you get an error that your GPU can't run on FP16
             bf16=False,  # Set to True if you have a GPU that supports BF16
