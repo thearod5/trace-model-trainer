@@ -2,11 +2,10 @@ import numpy as np
 from datasets import Dataset
 from torch.utils.data import Sampler
 
-from trace_model_trainer.constants import BATCH_SIZE
-
 
 class BalancedSampler(Sampler):
-    def __init__(self, dataset: Dataset, neg_sample_ratio: float = 1, batch_size=BATCH_SIZE):
+    def __init__(self, dataset: Dataset, batch_size: int, neg_sample_ratio: float = 1):
+        assert batch_size is not None
         super().__init__(dataset)
         df = dataset.to_pandas()
         self.dataset = dataset

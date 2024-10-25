@@ -7,7 +7,7 @@ from sentence_transformers.util import cos_sim
 from transformers import AutoModelForMaskedLM, AutoTokenizer, DataCollatorForLanguageModeling, PreTrainedTokenizerFast, Trainer, \
     TrainingArguments
 
-from trace_model_trainer.constants import BATCH_SIZE, DEFAULT_MLM_MODEL, N_EPOCHS
+from trace_model_trainer.constants import DEFAULT_MLM_MODEL, N_EPOCHS
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
@@ -30,7 +30,11 @@ class MLMModel(ITraceModel):
         similarity_matrix = cos_sim(torch.stack(source_embeddings), torch.stack(target_embeddings))
         return similarity_matrix
 
-    def train(self, dataset_map: Dict[str, TraceDataset] | TraceDataset, output_path: str, *args, **kwargs):
+    def train(self,
+              dataset_map: Dict[str, TraceDataset] | TraceDataset,
+              output_path: str,
+              batch_size: int = 8,
+              *args, **kwargs):
         assert isinstance(dataset_map, TraceDataset), "MLM only accepting trace dataset ATM."
 
         data_collator = DataCollatorForLanguageModeling(
@@ -40,8 +44,8 @@ class MLMModel(ITraceModel):
             output_dir=output_path,
             overwrite_output_dir=True,
             num_train_epochs=N_EPOCHS,
-            per_device_train_batch_size=BATCH_SIZE,
-            per_device_eval_batch_size=BATCH_SIZE,
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
             save_strategy="epoch",
             # evaluation_strategy="epoch",
             # load_best_model_at_end=True,

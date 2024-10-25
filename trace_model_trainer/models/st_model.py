@@ -8,7 +8,7 @@ from sentence_transformers.evaluation import RerankingEvaluator
 from sentence_transformers.training_args import BatchSamplers
 from sentence_transformers.util import cos_sim
 
-from trace_model_trainer.constants import BATCH_SIZE, DEFAULT_FP16, DEFAULT_ST_MODEL, N_EPOCHS
+from trace_model_trainer.constants import DEFAULT_FP16, DEFAULT_ST_MODEL, N_EPOCHS
 from trace_model_trainer.eval.utils import create_samples
 from trace_model_trainer.formatters.formatter_factory import FormatterFactory
 from trace_model_trainer.formatters.iformatter import IFormatter
@@ -35,20 +35,21 @@ class STModel(ITraceModel):
               output_path=None,
               args: Dict = None,
               balance: bool = True,
+              batch_size: int = 8,
+              learning_rate: float = 5e-5,
               **kwargs) -> SentenceTransformerTrainer:
         train_dataset = self._format_dataset(train_dataset)
         args = args or {}
 
         has_gpu = torch.cuda.is_available()
-        learning_rate = 5e-7 * (BATCH_SIZE / 8)
         print("Learning rate:", learning_rate)
         trainer_args = SentenceTransformerTrainingArguments(
             # Required parameter:
             output_dir=output_path,
             # Optional training parameters:
             num_train_epochs=N_EPOCHS,
-            per_device_train_batch_size=BATCH_SIZE,
-            per_device_eval_batch_size=BATCH_SIZE,
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
             learning_rate=learning_rate,
             warmup_ratio=0.1,
             fp16=DEFAULT_FP16 and has_gpu,  # Set to False if you get an error that your GPU can't run on FP16
@@ -72,7 +73,7 @@ class STModel(ITraceModel):
             trainer_args.metric_for_best_model = "evaluator_map"
             kwargs["evaluator"] = RerankingEvaluator(
                 samples=create_samples(eval_dataset),
-                batch_size=BATCH_SIZE,
+                batch_size=batch_size,
                 show_progress_bar=False,
                 write_csv=True,
                 name="evaluator"

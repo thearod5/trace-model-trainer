@@ -5,7 +5,6 @@ load_dotenv()
 # Training
 TARGET_COL = "t_text"
 RANDOM_SEED = 42
-BATCH_SIZE = 4
 TEST_SIZE = 0.25
 N_EPOCHS = 1
 DEFAULT_FP16 = True
