@@ -40,7 +40,7 @@ class STModel(ITraceModel):
         args = args or {}
 
         has_gpu = torch.cuda.is_available()
-        learning_rate = 5e-6 * (BATCH_SIZE / 8)
+        learning_rate = 5e-7 * (BATCH_SIZE / 8)
         print("Learning rate:", learning_rate)
         trainer_args = SentenceTransformerTrainingArguments(
             # Required parameter:
