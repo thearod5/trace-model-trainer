@@ -14,6 +14,7 @@ class BalancedSampler(Sampler):
         self.neg_indices = train_df[train_df["label"] == 0].index.to_list()
         self.neg_sample_ratio = neg_sample_ratio
         self.batch_size = batch_size
+        print("Ratio: ", len(self.pos_indices) / len(self.neg_indices))
 
     def __iter__(self):
         """
