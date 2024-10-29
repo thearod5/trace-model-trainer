@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Type
 
 import torch
 from datasets import Dataset
@@ -11,7 +11,6 @@ from trace_model_trainer.constants import DEFAULT_FP16, DEFAULT_ST_MODEL, N_EPOC
 from trace_model_trainer.formatters.formatter_factory import FormatterFactory
 from trace_model_trainer.formatters.iformatter import IFormatter
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
-from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
@@ -35,6 +34,7 @@ class STModel(ITraceModel):
               balance: bool = True,
               batch_size: int = 8,
               learning_rate: float = 5e-5,
+              trainer_class: Type[SentenceTransformer] = SentenceTransformerTrainer,
               **kwargs) -> SentenceTransformerTrainer:
         train_dataset = self._format_dataset(train_dataset)
         args = args or {}
@@ -74,7 +74,6 @@ class STModel(ITraceModel):
         for k, v in args.items():
             setattr(trainer_args, k, v)
 
-        trainer_class = BalancedTrainer if balance else SentenceTransformerTrainer
         trainer = trainer_class(self.get_model(),
                                 args=trainer_args,
                                 train_dataset=train_dataset,
