@@ -34,7 +34,7 @@ class STModel(ITraceModel):
               balance: bool = True,
               batch_size: int = 8,
               learning_rate: float = 5e-5,
-              trainer_class: Type[SentenceTransformer] = SentenceTransformerTrainer,
+              trainer_class: Type[SentenceTransformerTrainer] = SentenceTransformerTrainer,
               **kwargs) -> SentenceTransformerTrainer:
         train_dataset = self._format_dataset(train_dataset)
         args = args or {}

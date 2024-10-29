@@ -11,26 +11,37 @@ from trace_model_trainer.tdata.types import TracePrediction
 from trace_model_trainer.utils import create_source2targets, write_json
 
 
-def eval_model(model: ITraceModel, dataset: TraceDataset, save_prediction_path: str = None) -> Tuple[List[TracePrediction], Dict]:
-    # Create map for easy lookup to attach label later.
-    source2target = create_source2targets(dataset.trace_df)
-    predictions = compute_model_predictions(model, dataset)
+def eval_model(model: ITraceModel,
+               dataset: TraceDataset | Dict[str, TraceDataset],
+               save_prediction_path: str = None) -> Tuple[Dict[str, List[TracePrediction]], Dict]:
+    if not isinstance(dataset, dict):
+        dataset = {"dataset": dataset}
 
-    # Optional - Save predictions
-    if save_prediction_path is not None:
-        write_json({"predictions": predictions}, save_prediction_path)
+    metrics = {}
+    predictions = {}
+    for dataset_name, dataset in dataset.items():
+        # Create map for easy lookup to attach label later.
+        source2target = create_source2targets(dataset.trace_df)
+        dataset_predictions = compute_model_predictions(model, dataset)
 
-    # Add labels to predictions
-    for pred in predictions:
-        label = source2target[pred.source].get(pred.target, 0)
-        pred.label = label
+        # Optional - Save predictions
+        if save_prediction_path is not None:
+            write_json({"predictions": predictions}, save_prediction_path)
 
-    # Calculate metrics
-    query2preds = _group_predictions(predictions)
-    map_score = calculate_map(query2preds)
-    mrr_score = calculate_mrr(query2preds)
-    ndcg_score = calculate_ndcg(query2preds)
-    metrics = {"map": map_score, "mrr": mrr_score, "ndcg": ndcg_score}
+        # Add labels to predictions
+        for pred in dataset_predictions:
+            label = source2target[pred.source].get(pred.target, 0)
+            pred.label = label
+
+        # Calculate metrics
+        query2preds = _group_predictions(dataset_predictions)
+        map_score = calculate_map(query2preds)
+        mrr_score = calculate_mrr(query2preds)
+        ndcg_score = calculate_ndcg(query2preds)
+        dataset_metrics = {"map": map_score, "mrr": mrr_score, "ndcg": ndcg_score}
+        metrics[dataset_name] = dataset_metrics
+        predictions[dataset_name] = dataset_predictions
+
     return predictions, metrics
 
 

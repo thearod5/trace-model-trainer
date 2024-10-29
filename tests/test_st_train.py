@@ -13,9 +13,9 @@ from trace_model_trainer.utils import clear_memory
 
 
 def main():
-    test_output_path = os.path.expanduser("~/projects/trace-model-trainer/output/st_test_output")
     dataset = load_traceability_dataset("thearod5/EasyClinic")
     splitter = SplitterFactory.QUERY.create(group_col="target")
+    test_output_path = os.path.expanduser("~/projects/trace-model-trainer/output/st_test_output")
     context = EvaluationContext(test_output_path)
 
     context.log_dataset(dataset, "dataset")
