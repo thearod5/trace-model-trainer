@@ -4,12 +4,10 @@ from typing import Dict, List
 import torch
 from datasets import Dataset
 from sentence_transformers import SentenceTransformer, SentenceTransformerTrainer, SentenceTransformerTrainingArguments
-from sentence_transformers.evaluation import RerankingEvaluator
 from sentence_transformers.training_args import BatchSamplers
 from sentence_transformers.util import cos_sim
 
 from trace_model_trainer.constants import DEFAULT_FP16, DEFAULT_ST_MODEL, N_EPOCHS
-from trace_model_trainer.eval.utils import create_samples
 from trace_model_trainer.formatters.formatter_factory import FormatterFactory
 from trace_model_trainer.formatters.iformatter import IFormatter
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
@@ -70,14 +68,8 @@ class STModel(ITraceModel):
             trainer_args.eval_strategy = "epoch"
             trainer_args.eval_steps = 1
             trainer_args.load_best_model_at_end = True
-            trainer_args.metric_for_best_model = "evaluator_map"
-            kwargs["evaluator"] = RerankingEvaluator(
-                samples=create_samples(eval_dataset),
-                batch_size=batch_size,
-                show_progress_bar=False,
-                write_csv=True,
-                name="evaluator"
-            )
+            trainer_args.metric_for_best_model = "eval_loss"
+            eval_dataset = self._format_dataset(eval_dataset)
 
         for k, v in args.items():
             setattr(trainer_args, k, v)
@@ -86,6 +78,7 @@ class STModel(ITraceModel):
         trainer = trainer_class(self.get_model(),
                                 args=trainer_args,
                                 train_dataset=train_dataset,
+                                eval_dataset=eval_dataset,
                                 loss=losses,
                                 **kwargs)
 

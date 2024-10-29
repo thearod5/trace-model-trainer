@@ -122,7 +122,7 @@ def aggregate_metrics(metrics: List[Dict], exclude_group: str = "seed") -> DataF
     return DataFrame(entries)
 
 
-def create_samples(trace_dataset: TraceDataset):
+def create_retrieval_queries(trace_dataset: TraceDataset):
     target_queries = {}
     trace_map = create_source2targets(trace_dataset.trace_df)
     for source_artifact_ids, target_artifact_ids in trace_iterator(trace_dataset):
@@ -136,5 +136,6 @@ def create_samples(trace_dataset: TraceDataset):
                 else:
                     target_queries[t_id]['positive'].append(s_id)
 
-    samples = [{"query": k, **v} for k, v in target_queries.items() if len(v["positive"]) > 0]
-    return samples
+    queries = [{"query": k, **v} for k, v in target_queries.items() if len(v["positive"]) > 0]
+    assert len(queries) > 0
+    return queries
