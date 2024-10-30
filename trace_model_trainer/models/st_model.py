@@ -68,7 +68,6 @@ class STModel(ITraceModel):
             trainer_args.eval_strategy = "epoch"
             trainer_args.eval_steps = 1
             trainer_args.load_best_model_at_end = True
-            trainer_args.metric_for_best_model = "eval_loss"
             eval_dataset = self._format_dataset(eval_dataset)
 
         for k, v in args.items():
