@@ -67,11 +67,20 @@ def scale(matrix):
 
 
 def create_source2targets(trace_df: DataFrame):
+    """
+    Creates map of source ids to traced target ids.
+    :param trace_df: The data frame containing trace links.
+    :return: Map of sources to traced targets.
+    """
     source2target = defaultdict(dict)
-    for _, t in trace_df.iterrows():
-        label = t.get("label", 1)
-        if label == 1:
-            source2target[t["source"]][t["target"]] = 1
+
+    # Filter rows where label is 1
+    filtered_df = trace_df[trace_df["label"] == 1]
+
+    # Iterate using itertuples for faster row access
+    for row in filtered_df.itertuples(index=False):
+        source2target[row.source][row.target] = 1
+
     return source2target
 
 
