@@ -2,20 +2,19 @@ import os
 from typing import Dict, List, Type
 
 import torch
+from datasets import Dataset, DatasetDict
 from sentence_transformers import SentenceTransformer, SentenceTransformerTrainer, SentenceTransformerTrainingArguments
 from sentence_transformers.training_args import BatchSamplers
 from sentence_transformers.util import cos_sim
 from torch import nn
 
 from trace_model_trainer.constants import DEFAULT_FP16, DEFAULT_ST_MODEL, N_EPOCHS
-from trace_model_trainer.formatters.formatter_factory import FormatterFactory
-from trace_model_trainer.formatters.iformatter import IFormatter
 from trace_model_trainer.models.itrace_model import ITraceModel, SimilarityMatrix
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 class STModel(ITraceModel):
-    def __init__(self, model_name: str = DEFAULT_ST_MODEL, formatter: IFormatter = None):
+    def __init__(self, model_name: str = DEFAULT_ST_MODEL):
         """
         Creates sentence transformer model with given model and formatter.
         :param model_name:
@@ -23,11 +22,10 @@ class STModel(ITraceModel):
         """
         self.model_name = model_name
         self._model = None
-        self._formatter = formatter or FormatterFactory.CLASSIFICATION.create()
 
     def train(self,
-              train_dataset: Dict[str, TraceDataset],
-              eval_dataset: Dict[str, TraceDataset],
+              train_dataset: Dataset | DatasetDict | Dict[str, Dataset],
+              eval_dataset: Dataset | DatasetDict | Dict[str, Dataset],
               losses: Dict[str, nn.Module],
               output_path=None,
               args: Dict = None,
@@ -39,8 +37,6 @@ class STModel(ITraceModel):
               metric_for_best_model: str = "loss",
               trainer_class: Type[SentenceTransformerTrainer] = SentenceTransformerTrainer,
               **kwargs) -> SentenceTransformerTrainer:
-        train_dataset = self._format_dataset(train_dataset)
-        eval_dataset = self._format_dataset(eval_dataset)
 
         args = args or {}
 

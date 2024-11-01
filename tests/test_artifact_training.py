@@ -5,6 +5,7 @@ from sentence_transformers.losses import ContrastiveTensionLoss
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
+from trace_model_trainer.formatters.classification_formatter import ClassificationFormatter
 from trace_model_trainer.formatters.kat_formatter import KatFormatter
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
@@ -41,16 +42,19 @@ def main():
     # Load Model
     st_model = STModel(MODEL_NAME, formatter=KatFormatter())
 
+    # Baseline Evaluation
+    _, before_metrics = eval_model(st_model, dataset)
+
     # Create Loss
     loss = ContrastiveTensionLoss(st_model.get_model())
-
-    _, before_metrics = eval_model(st_model, dataset)
+    train_dataset = KatFormatter().format(dataset)
+    val_dataset = ClassificationFormatter().format(dataset)
 
     # Create Trainer
     st_model.train(
-        train_dataset={"train_dataset": dataset},
-        eval_dataset={"eval_dataset": dataset},
-        losses={"train_dataset": loss, "eval_dataset": loss},
+        train_dataset={"train": train_dataset},
+        eval_dataset={"eval": val_dataset},
+        losses={"train": loss, "eval": loss},
         output_path=os.path.join(context.get_base_path(), "model"),
         batch_size=BATCH_SIZE,
         learning_rate=LEARNING_RATE,
@@ -63,7 +67,7 @@ def main():
             "eval_strategy": "epoch",
             "eval_steps": 1,
             "load_best_model_at_end": True,
-            "metric_for_best_model": "eval_dataset_loss"
+            "metric_for_best_model": "eval_eval_loss"
         }
     )
 

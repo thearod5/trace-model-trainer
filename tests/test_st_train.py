@@ -6,6 +6,7 @@ from trace_model_trainer.eval.kfold import kfold
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
+from trace_model_trainer.formatters.classification_formatter import ClassificationFormatter
 from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
@@ -18,11 +19,15 @@ def main():
     test_output_path = os.path.expanduser("~/projects/trace-model-trainer/output/st_test_output")
     context = EvaluationContext(test_output_path)
 
-    for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [0.1, 0.1, 0.8], splitter, 1, [42]):
+    for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [0.1, 0.1, 0.8], splitter, 1, [364882]):
         context.set_base_path(f"seed={seed}")
         st_model = STModel("all-MiniLM-L6-v2")
         _, before_metrics = eval_model(st_model, test_dataset)
         loss = ContrastiveLoss(st_model.get_model())
+
+        train_dataset = ClassificationFormatter().format(train_dataset)
+        val_dataset = ClassificationFormatter().format(val_dataset)
+
         trainer = st_model.train(
             train_dataset={"train_data": train_dataset},
             eval_dataset={"eval_data": val_dataset},
