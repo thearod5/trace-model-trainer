@@ -40,7 +40,7 @@ def main():
     dataset = load_traceability_dataset("thearod5/cm1")
 
     # Load Model
-    st_model = STModel(MODEL_NAME, formatter=KatFormatter())
+    st_model = STModel(MODEL_NAME)
 
     # Baseline Evaluation
     _, before_metrics = eval_model(st_model, dataset)
