@@ -11,6 +11,7 @@ class BalancedSampler(Sampler):
         self.dataset = dataset
         self.neg_sample_ratio = neg_sample_ratio
         self.batch_size = batch_size
+        print("Using balanced sampler")
 
     @staticmethod
     def extract_indices(dataset: Dataset | ConcatDataset):

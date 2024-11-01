@@ -1,7 +1,7 @@
 from sentence_transformers import SentenceTransformerTrainer
 from torch.utils.data import DataLoader
 
-from trace_model_trainer.models.st.balanced_data_loader import BalancedSampler
+from trace_model_trainer.models.st.balanced_sampler import BalancedSampler
 
 
 class BalancedTrainer(SentenceTransformerTrainer):
