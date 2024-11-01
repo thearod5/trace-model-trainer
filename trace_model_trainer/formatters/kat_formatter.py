@@ -7,7 +7,7 @@ from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 class KatFormatter(IFormatter):
-    def format(self, dataset: TraceDataset, pos_neg_ratio=3) -> Dataset:
+    def format(self, dataset: TraceDataset, artifact_df, pos_neg_ratio=3) -> Dataset:
         artifact_map = dataset.artifact_map
 
         pos_indices = []
@@ -22,7 +22,7 @@ class KatFormatter(IFormatter):
             labels.append(label)
             (pos_indices if label == 1 else neg_indices).append(i)
 
-        for artifact_id, artifact_body in artifact_map.items():
+        for artifact_body in artifact_df["content"]:
             texts1.append(artifact_body)
             texts2.append(artifact_body)
             labels.append(1)
