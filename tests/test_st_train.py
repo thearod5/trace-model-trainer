@@ -18,10 +18,9 @@ def main():
     test_output_path = os.path.expanduser("~/projects/trace-model-trainer/output/st_test_output")
     context = EvaluationContext(test_output_path)
 
-    st_model = STModel("all-MiniLM-L6-v2")
     for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [0.1, 0.1, 0.8], splitter, 1, [42]):
         context.set_base_path(f"seed={seed}")
-
+        st_model = STModel("all-MiniLM-L6-v2")
         _, before_metrics = eval_model(st_model, test_dataset)
         loss = ContrastiveLoss(st_model.get_model())
         trainer = st_model.train(
@@ -48,6 +47,8 @@ def main():
         for log in trainer.state.log_history:
             print(log)
 
+        del st_model
+        st_model = None
         clear_memory()
 
     metric_df = context.get_metrics()
