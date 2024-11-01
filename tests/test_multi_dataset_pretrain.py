@@ -1,12 +1,11 @@
 import os
 
-from sentence_transformers.evaluation import RerankingEvaluator
 from sentence_transformers.losses import ContrastiveTensionLoss
 
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
-from trace_model_trainer.eval.utils import create_retrieval_queries, eval_model
+from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
-from trace_model_trainer.formatters.formatter_factory import FormatterFactory
+from trace_model_trainer.formatters.kat_formatter import KatFormatter
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
 
@@ -22,6 +21,7 @@ DATASETS = [
     "Albergate",
     "GANNT"
 ]
+DATASETS = DATASETS[:1]
 MODEL_NAME = "all-MiniLM-L6-v2"
 EPOCHS = 1
 BATCH_SIZE = 4
@@ -36,23 +36,21 @@ def main():
     context = EvaluationContext(test_output_path)
 
     # Create Datasets
-    train_dataset_map, test_dataset_map = create_datasets(DATASETS)
-    samples = [s for d in test_dataset_map.values() for s in create_retrieval_queries(d)]
+    dataset = load_traceability_dataset("thearod5/cm1")
 
     # Load Model
-    st_model = STModel(MODEL_NAME, formatter=FormatterFactory.CONTRASTIVE_TENSION.create())
+    st_model = STModel(MODEL_NAME, formatter=KatFormatter())
 
     # Create Loss
-    dataset_keys = list(set(train_dataset_map.keys()).union(test_dataset_map.keys()))
     loss = ContrastiveTensionLoss(st_model.get_model())
-    losses = {d_name: loss for d_name in dataset_keys}
 
-    predictions, before_metrics = eval_model(st_model, test_dataset_map)
+    _, before_metrics = eval_model(st_model, dataset)
 
     # Create Trainer
     st_model.train(
-        train_dataset_map,
-        losses,
+        train_dataset={"train_dataset": dataset},
+        eval_dataset={"eval_dataset": dataset},
+        losses={"train_dataset": loss, "eval_dataset": loss},
         output_path=os.path.join(context.get_base_path(), "model"),
         batch_size=BATCH_SIZE,
         learning_rate=LEARNING_RATE,
@@ -65,34 +63,13 @@ def main():
             "eval_strategy": "epoch",
             "eval_steps": 1,
             "load_best_model_at_end": True,
-            "metric_for_best_model": "evaluator_map"
-        },
-        evaluator=RerankingEvaluator(
-            samples=samples,
-            batch_size=8,
-            show_progress_bar=False,
-            write_csv=True,
-            name="evaluator"
-        )
+            "metric_for_best_model": "eval_dataset_loss"
+        }
     )
 
-    predictions, after_metrics = eval_model(st_model, test_dataset_map)
-    print("BEFORE\n", before_metrics)
-    print("AFTER\n", after_metrics)
-
-
-def create_datasets(dataset_names):
-    train_dataset_map = {}
-    test_dataset_map = {}
-
-    for dataset_name in dataset_names:
-        dataset = load_traceability_dataset(f"thearod5/{dataset_name}")
-        train_x, test_x = splitter.split(dataset, 0.1)
-
-        train_dataset_map[f"{dataset_name}-train"] = train_x
-        test_dataset_map[f"{dataset_name}-train"] = test_x
-
-    return train_dataset_map, test_dataset_map
+    _, after_metrics = eval_model(st_model, dataset)
+    print("BEFORE\n", before_metrics["dataset"])
+    print("AFTER\n", after_metrics["dataset"])
 
 
 if __name__ == "__main__":

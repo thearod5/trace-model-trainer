@@ -36,8 +36,9 @@ def load_traceability_dataset(dataset_name: str, **kwargs) -> TraceDataset:
 
 def _to_trace_df(dataset: Dataset) -> DataFrame:
     if "s_id" in dataset.column_names:
-        df = dataset.rename_columns({"s_id": "source", "t_id": "target"})
-    df = dataset.to_pandas()
+        df = dataset.rename_columns({"s_id": "source", "t_id": "target"}).to_pandas()
+    else:
+        df = dataset.to_pandas()
     df["source"] = df["source"].astype(str)
     df["target"] = df["target"].astype(str)
     return df

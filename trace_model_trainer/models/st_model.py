@@ -2,10 +2,10 @@ import os
 from typing import Dict, List, Type
 
 import torch
-from datasets import Dataset
 from sentence_transformers import SentenceTransformer, SentenceTransformerTrainer, SentenceTransformerTrainingArguments
 from sentence_transformers.training_args import BatchSamplers
 from sentence_transformers.util import cos_sim
+from torch import nn
 
 from trace_model_trainer.constants import DEFAULT_FP16, DEFAULT_ST_MODEL, N_EPOCHS
 from trace_model_trainer.formatters.formatter_factory import FormatterFactory
@@ -26,17 +26,23 @@ class STModel(ITraceModel):
         self._formatter = formatter or FormatterFactory.CLASSIFICATION.create()
 
     def train(self,
-              train_dataset: Dict[str, Dataset] | Dataset,
-              losses,
-              eval_dataset: TraceDataset = None,
+              train_dataset: Dict[str, TraceDataset],
+              eval_dataset: Dict[str, TraceDataset],
+              losses: Dict[str, nn.Module],
               output_path=None,
               args: Dict = None,
               balance: bool = True,
               batch_size: int = 8,
               learning_rate: float = 5e-5,
+              eval_strategy: str = "epoch",
+              eval_steps: int = 1,
+              load_best_model_at_end: bool = True,
+              metric_for_best_model: str = "loss",
               trainer_class: Type[SentenceTransformerTrainer] = SentenceTransformerTrainer,
               **kwargs) -> SentenceTransformerTrainer:
         train_dataset = self._format_dataset(train_dataset)
+        eval_dataset = self._format_dataset(eval_dataset)
+
         args = args or {}
 
         has_gpu = torch.cuda.is_available()
@@ -64,11 +70,10 @@ class STModel(ITraceModel):
             batch_sampler=BatchSamplers.NO_DUPLICATES
         )
 
-        if eval_dataset:
-            trainer_args.eval_strategy = "epoch"
-            trainer_args.eval_steps = 1
-            trainer_args.load_best_model_at_end = True
-            eval_dataset = self._format_dataset(eval_dataset)
+        trainer_args.eval_strategy = eval_strategy
+        trainer_args.eval_steps = eval_steps
+        trainer_args.load_best_model_at_end = load_best_model_at_end
+        trainer_args.metric_for_best_model = metric_for_best_model
 
         for k, v in args.items():
             setattr(trainer_args, k, v)
