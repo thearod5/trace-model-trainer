@@ -7,7 +7,7 @@ from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 class KatFormatter(IFormatter):
-    def format(self, dataset: TraceDataset, artifact_df, pos_neg_ratio=3) -> Dataset:
+    def format(self, dataset: TraceDataset, artifact_df, pos_neg_ratio=.5) -> Dataset:
         artifact_map = dataset.artifact_map
 
         pos_indices = []

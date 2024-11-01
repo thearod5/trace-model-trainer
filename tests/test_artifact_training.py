@@ -5,8 +5,7 @@ from sentence_transformers.losses import ContrastiveTensionLoss
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
-from trace_model_trainer.formatters.classification_formatter import ClassificationFormatter
-from trace_model_trainer.formatters.kat_formatter import KatFormatter
+from trace_model_trainer.formatters.contrastive_tension_formatter import ContrastiveTensionFormatter
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
 
@@ -47,8 +46,8 @@ def main():
 
     # Create Loss
     loss = ContrastiveTensionLoss(st_model.get_model())
-    train_dataset = KatFormatter().format(dataset)
-    val_dataset = ClassificationFormatter().format(dataset)
+    train_dataset = ContrastiveTensionFormatter().format(dataset)
+    val_dataset = ContrastiveTensionFormatter().format(dataset)
 
     # Create Trainer
     st_model.train(
