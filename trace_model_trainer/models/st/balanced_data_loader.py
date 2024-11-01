@@ -1,18 +1,30 @@
 import numpy as np
 from datasets import Dataset
-from torch.utils.data import Sampler
+from torch.utils.data import ConcatDataset, Sampler
 
 
 class BalancedSampler(Sampler):
     def __init__(self, dataset: Dataset, batch_size: int, neg_sample_ratio: float = 1):
         assert batch_size is not None
         super().__init__(dataset)
-        df = dataset.to_pandas()
+        self.pos_indices, self.neg_indices = self.extract_indices(dataset)
         self.dataset = dataset
-        self.pos_indices = df[df["label"] == 1].index.to_list()
-        self.neg_indices = df[df["label"] == 0].index.to_list()
         self.neg_sample_ratio = neg_sample_ratio
         self.batch_size = batch_size
+
+    @staticmethod
+    def extract_indices(dataset: Dataset | ConcatDataset):
+        if isinstance(dataset, Dataset):
+            df = dataset.to_pandas()
+            pos_indices = df[df["label"] == 1].index.to_list()
+            neg_indices = df[df["label"] == 0].index.to_list()
+        else:
+            pos_indices = []
+            neg_indices = []
+            for i, item in enumerate(dataset):
+                (pos_indices if item["label"] == 1 else neg_indices).append(i)
+
+        return pos_indices, neg_indices
 
     def __iter__(self):
         """

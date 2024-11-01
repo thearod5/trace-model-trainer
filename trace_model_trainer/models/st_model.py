@@ -31,7 +31,6 @@ class STModel(ITraceModel):
               losses: Dict[str, nn.Module],
               output_path=None,
               args: Dict = None,
-              balance: bool = True,
               batch_size: int = 8,
               learning_rate: float = 5e-5,
               eval_strategy: str = "epoch",
