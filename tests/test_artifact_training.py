@@ -36,7 +36,9 @@ def main():
     context = EvaluationContext(test_output_path)
 
     # Create Datasets
-    dataset = load_traceability_dataset(os.path.expanduser("~projects/trace-model-trainer/res/test"))
+    # os.path.expanduser("~projects/trace-model-trainer/res/test")
+    # 364882
+    dataset = load_traceability_dataset("thearod5/eAnci")
 
     # Load Model
     st_model = STModel(MODEL_NAME)

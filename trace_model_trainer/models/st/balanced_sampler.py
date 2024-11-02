@@ -12,6 +12,8 @@ class BalancedSampler(Sampler):
         self.neg_sample_ratio = neg_sample_ratio
         self.batch_size = batch_size
         self.batches = self.create_batches()
+        assert len(self.pos_indices) > 0, f"Received samples with no positive indices"
+        assert len(self.neg_indices) > 0, f"Received samples with no negative indices"
         print("Using balanced sampler")
 
     @staticmethod

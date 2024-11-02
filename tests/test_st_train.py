@@ -35,7 +35,7 @@ def main():
             batch_size=3,
             learning_rate=5e-6,
             args={
-                "num_train_epochs": 1,
+                "num_train_epochs": 2,
                 "enable_full_determinism": True,
                 "seed": seed,
                 "eval_strategy": "epoch",
