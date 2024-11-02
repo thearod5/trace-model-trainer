@@ -11,6 +11,7 @@ class BalancedSampler(Sampler):
         self.dataset = dataset
         self.neg_sample_ratio = neg_sample_ratio
         self.batch_size = batch_size
+        self.batches = self.create_batches()
         print("Using balanced sampler")
 
     @staticmethod
@@ -32,19 +33,16 @@ class BalancedSampler(Sampler):
         Create iterator over balanced training data.
         :return: Iterator of training batches.
         """
-        for batch in self.create_batches():
+        for batch in self.batches:
             yield batch
+        self.batches = self.create_batches()
 
     def __len__(self):
         """
         Calculates the expected number of balanced batches.
         :return: Number of batches.
         """
-        n_samples = len(self.pos_indices) + (len(self.pos_indices) * self.neg_sample_ratio)
-        n_batches = n_samples // self.batch_size
-        if n_samples % self.batch_size != 0:
-            n_batches += 1
-        return n_batches
+        return len(self.batches)
 
     def create_batches(self):
         """
