@@ -4,17 +4,20 @@ from torch.utils.data import ConcatDataset, Sampler
 
 
 class BalancedSampler(Sampler):
-    def __init__(self, dataset: Dataset, batch_size: int, neg_sample_ratio: float = 2):
+    def __init__(self, dataset: Dataset, batch_size: int, neg_sample_ratio: float = 3):
+        print("Using BalancedSampler")
         assert batch_size is not None
+        assert batch_size % (neg_sample_ratio + 1) == 0, f"Batch size ({batch_size}) must be divisible by {neg_sample_ratio + 1}"
         super().__init__(dataset)
         self.pos_indices, self.neg_indices = self.extract_indices(dataset)
         self.dataset = dataset
         self.neg_sample_ratio = neg_sample_ratio
         self.batch_size = batch_size
-        self.batches = self.create_batches()
+
         assert len(self.pos_indices) > 0, f"Received samples with no positive indices"
         assert len(self.neg_indices) > 0, f"Received samples with no negative indices"
-        print("Using balanced sampler")
+
+        self.batches = self.create_batches()
 
     @staticmethod
     def extract_indices(dataset: Dataset | ConcatDataset):
