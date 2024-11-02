@@ -6,7 +6,7 @@ from datasets import Dataset
 from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.formatters.iformatter import IFormatter
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
-from trace_model_trainer.utils import create_source2targets
+from trace_model_trainer.utils import create_trace_map
 
 
 class TripletFormatter(IFormatter):
@@ -37,7 +37,7 @@ class TripletFormatter(IFormatter):
     @staticmethod
     def create_triplet_lookup(dataset: TraceDataset):
         lookup = defaultdict(lambda: {"pos": [], 'neg': []})
-        trace_map = create_source2targets(dataset.trace_df)
+        trace_map = create_trace_map(dataset.trace_df)
         for source_artifact_ids, target_artifact_ids in trace_iterator(dataset):
             for s_id in source_artifact_ids:
                 for t_id in target_artifact_ids:

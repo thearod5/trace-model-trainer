@@ -7,7 +7,7 @@ from trace_model_trainer.eval.splitters.isplitter import ISplitter
 from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.tdata.trace_dataset import ArtifactDataFrame, TraceDataFrame, TraceDataset
 from trace_model_trainer.tdata.types import TracePrediction
-from trace_model_trainer.utils import create_source2targets
+from trace_model_trainer.utils import create_trace_map
 
 
 class LinkSplitter(ISplitter):
@@ -18,7 +18,7 @@ class LinkSplitter(ISplitter):
         :param train_size: The percentage of the data to keep in the first split.
         :return: Train split and test split.
         """
-        source2targets = create_source2targets(dataset.trace_df)
+        source2targets = create_trace_map(dataset.trace_df)
         traces = []
         # TODO: This operation is getting repeated now.
         for source_ids, target_ids in trace_iterator(dataset):

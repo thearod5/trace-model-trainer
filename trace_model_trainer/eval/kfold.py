@@ -17,7 +17,7 @@ def kfold(dataset: TraceDataset,
 
 
 def _create_splits(dataset: TraceDataset, split_sizes: List[float], splitter: ISplitter, **kwargs) -> List[TraceDataset]:
-    assert sum(split_sizes) == 1, f"Sum of split does not equal 1."
+    assert .999 < sum(split_sizes) <= 1, f"Sum of split does not equal 1."
     left = 1.0
     splits = []
     for split_index in range(len(split_sizes)):

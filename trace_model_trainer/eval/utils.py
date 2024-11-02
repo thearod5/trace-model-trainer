@@ -8,7 +8,7 @@ from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.models.itrace_model import ITraceModel
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
 from trace_model_trainer.tdata.types import TracePrediction
-from trace_model_trainer.utils import create_source2targets, write_json
+from trace_model_trainer.utils import create_trace_map, write_json
 
 
 def eval_model(model: ITraceModel,
@@ -21,20 +21,15 @@ def eval_model(model: ITraceModel,
     predictions = {}
     for dataset_name, dataset in dataset.items():
         # Create map for easy lookup to attach label later.
-        source2target = create_source2targets(dataset.trace_df)
         dataset_predictions = compute_model_predictions(model, dataset)
 
         # Optional - Save predictions
         if save_prediction_path is not None:
             write_json({"predictions": predictions}, save_prediction_path)
 
-        # Add labels to predictions
-        for pred in dataset_predictions:
-            label = source2target[pred.source].get(pred.target, 0)
-            pred.label = label
-
         # Calculate metrics
         query2preds = _group_predictions(dataset_predictions)
+        query2preds = {query: sorted(preds, key=lambda x: x.score, reverse=True) for query, preds in query2preds.items()}
         map_score = calculate_map(query2preds)
         mrr_score = calculate_mrr(query2preds)
         ndcg_score = calculate_ndcg(query2preds)
@@ -75,10 +70,11 @@ def calculate_mrr(query2preds: Dict[str, List[TracePrediction]]) -> float:
     for target, predictions in query2preds.items():
         # Sort predictions by score in descending order
         sorted_preds = sorted(predictions, key=lambda x: x.score, reverse=True)
+        query_ranks = []
         for rank, pred in enumerate(sorted_preds, start=1):
             if pred.label == 1:  # If the prediction is correct
-                reciprocal_ranks.append(1 / rank)
-                break
+                query_ranks.append(1 / (rank - len(query_ranks)))
+        reciprocal_ranks.extend(query_ranks)
     if not reciprocal_ranks:
         return 0
     return sum(reciprocal_ranks) / len(reciprocal_ranks)
@@ -100,6 +96,8 @@ def calculate_ndcg(query2preds: Dict[str, List[TracePrediction]]):
 
 
 def compute_model_predictions(trace_model: ITraceModel, dataset: TraceDataset):
+    trace_map = create_trace_map(dataset.trace_df)
+
     predictions = []
     for source_ids, target_ids in trace_iterator(dataset):
         source_texts = [dataset.artifact_map[a_id] for a_id in source_ids]
@@ -109,7 +107,7 @@ def compute_model_predictions(trace_model: ITraceModel, dataset: TraceDataset):
         for s_index, s_id in enumerate(source_ids):
             for t_index, t_id in enumerate(target_ids):
                 score = similarity_matrix[s_index][t_index]
-                predictions.append(TracePrediction(source=s_id, target=t_id, label=None, score=score))
+                predictions.append(TracePrediction(source=s_id, target=t_id, label=trace_map[s_id].get(t_id, 0), score=score))
     return predictions
 
 
@@ -135,7 +133,7 @@ def aggregate_metrics(metrics: List[Dict], exclude_group: str = "seed") -> DataF
 
 def create_retrieval_queries(trace_dataset: TraceDataset):
     target_queries = {}
-    trace_map = create_source2targets(trace_dataset.trace_df)
+    trace_map = create_trace_map(trace_dataset.trace_df)
     for source_artifact_ids, target_artifact_ids in trace_iterator(trace_dataset):
         for s_id in source_artifact_ids:
             for t_id in target_artifact_ids:

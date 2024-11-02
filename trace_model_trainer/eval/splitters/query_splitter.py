@@ -8,7 +8,7 @@ from trace_model_trainer.eval.splitters.isplitter import ISplitter
 from trace_model_trainer.eval.trace_iterator import trace_iterator
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
 from trace_model_trainer.tdata.types import TracePrediction
-from trace_model_trainer.utils import create_source2targets
+from trace_model_trainer.utils import create_trace_map
 
 
 class QuerySplitter(ISplitter):
@@ -29,9 +29,11 @@ class QuerySplitter(ISplitter):
             for t_id in target_ids:
                 query2items[t_id].extend(source_ids)
 
-        train_queries, test_queries = train_test_split(list(query2items.keys()), train_size=train_size, random_state=random_seed)
+        train_queries, test_queries = train_test_split(list(query2items.keys()),
+                                                       train_size=round(train_size, 5),
+                                                       random_state=random_seed)
 
-        source2targets = create_source2targets(dataset.trace_df)
+        source2targets = create_trace_map(dataset.trace_df)
 
         train_df = self.extract_trace_df_from_query_map(source2targets, {q: query2items[q] for q in train_queries})
         test_df = self.extract_trace_df_from_query_map(source2targets, {q: query2items[q] for q in test_queries})

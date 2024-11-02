@@ -17,7 +17,8 @@ class TestQuerySplitter(TestCase):
             }),
             trace_df=DataFrame({
                 "source": ["S1", "S1"],
-                "target": ["T1", "T2"]
+                "target": ["T1", "T2"],
+                "label": [1, 1]
             }),
             layer_df=DataFrame({
                 "source_type": ["source_type"],

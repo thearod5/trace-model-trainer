@@ -24,7 +24,7 @@ def read_project(project_path: str, disable_logs: bool = False) -> TraceDataset:
 
     file2layer = {a['fileName']: a['type'] for a in tim["artifacts"]}
     file2traced_layers = {f['fileName']: (f['sourceType'], f['targetType']) for f in tim["traces"]}
-    layer_df = DataFrame(file2traced_layers.values())
+    layer_df = DataFrame([{"source_type": s_id, "target_type": t_id} for s_id, t_id in file2traced_layers.values()])
 
     artifact_df = create_artifact_df(project_path, file2layer)
     trace_df = create_trace_df(project_path, file2traced_layers.keys())
@@ -51,6 +51,8 @@ def create_artifact_df(project_path: str, file2layer: Dict[str, str]):
         df = pd.read_csv(os.path.join(project_path, f))
         if "layer" not in df.columns:
             df["layer"] = file2layer[f]
+        if "summary" not in df.columns:
+            df["summary"] = None
         dfs.append(df)
     return pd.concat(dfs)
 

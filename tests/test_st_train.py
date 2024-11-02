@@ -14,12 +14,12 @@ from trace_model_trainer.utils import clear_memory
 
 
 def main():
-    dataset = load_traceability_dataset("thearod5/eAnci")
+    dataset = load_traceability_dataset(os.path.expanduser("~/projects/trace-model-trainer/res/test"))
     splitter = SplitterFactory.QUERY.create(group_col="target")
     test_output_path = os.path.expanduser("~/projects/trace-model-trainer/output/st_test_output")
     context = EvaluationContext(test_output_path)
 
-    for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [0.1, 0.1, 0.8], splitter, 1, [364882]):
+    for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [.333, .333, .333], splitter, 1, [364882]):
         context.set_base_path(f"seed={seed}")
         st_model = STModel("all-MiniLM-L6-v2")
         _, before_metrics = eval_model(st_model, test_dataset)

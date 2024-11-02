@@ -66,12 +66,15 @@ def scale(matrix):
     return scaled_matrix
 
 
-def create_source2targets(trace_df: DataFrame):
+def create_trace_map(trace_df: DataFrame, group_attr="source", target_attr="target"):
     """
     Creates map of source ids to traced target ids.
     :param trace_df: The data frame containing trace links.
+    :param group_attr: The attribute to group each row by.
+    :param target_attr: The corresponding attribute to attach to each group.
     :return: Map of sources to traced targets.
     """
+    assert "label" in trace_df.columns, f"Result: {trace_df.columns}"
     source2target = defaultdict(dict)
 
     # Filter rows where label is 1
@@ -79,7 +82,9 @@ def create_source2targets(trace_df: DataFrame):
 
     # Iterate using itertuples for faster row access
     for row in filtered_df.itertuples(index=False):
-        source2target[row.source][row.target] = 1
+        group_val = getattr(row, group_attr)
+        target_val = getattr(row, target_attr)
+        source2target[group_val][target_val] = 1
 
     return source2target
 

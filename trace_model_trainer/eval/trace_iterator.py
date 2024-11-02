@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
-from trace_model_trainer.utils import create_source2targets
+from trace_model_trainer.utils import create_trace_map
 
 
 def trace_iterator(dataset: TraceDataset, empty_ok: bool = False) -> List[Tuple[str, str]]:
@@ -28,7 +28,7 @@ def trace_iterator(dataset: TraceDataset, empty_ok: bool = False) -> List[Tuple[
     return payload
 
 
-def trace_iterator_labeled(dataset: TraceDataset, empty_ok: bool = False) -> List[Tuple[str, str, int]]:
+def trace_iterator_labeled(dataset: TraceDataset, empty_ok: bool = False) -> List[Tuple[List[str], List[str], List[int]]]:
     """
     Iterates through each set of traced artifacts in the dataset.
     :param dataset: The dataset whose trace you want to iterate over.
@@ -37,7 +37,7 @@ def trace_iterator_labeled(dataset: TraceDataset, empty_ok: bool = False) -> Lis
     """
     if len(dataset.layer_df) == 0 and not empty_ok:
         raise Exception("Attempted to retrieve combination of traces, but no matrix defined.")
-    trace_map = create_source2targets(dataset.trace_df)
+    trace_map = create_trace_map(dataset.trace_df)
 
     payload = []
     for layer_row in dataset.layer_df.itertuples():

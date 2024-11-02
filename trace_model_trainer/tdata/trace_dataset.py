@@ -19,7 +19,7 @@ class TraceDataset:
         :param trace_df: DataFrame containing trace links between artifacts.
         :param layer_df: DataFrame containing the types being traced (Artifact.layer)
         """
-        assert all(c in artifact_df.columns for c in ["id", "content", "summary", "layer"]), f"Result: {artifact_df.columns}"
+        assert all(c in artifact_df.columns for c in ["id", "content", "layer"]), f"Result: {artifact_df.columns}"
         assert all(c in trace_df.columns for c in ["source", "target"]), f"Result: {trace_df.columns}"
         assert all(c in layer_df.columns for c in ["source_type", "target_type"]), f"Result: {layer_df.columns}"
 
@@ -43,8 +43,12 @@ class TraceDataset:
         return self.artifact_df[self.artifact_df['layer'] == type_name]
 
 
-def filter_referenced_artifacts(trace_df, artifact_df):
+def filter_referenced_artifacts(trace_df, artifact_df, threshold: int = 0):
     artifacts = set(artifact_df["id"].unique())
+    missing_sources = trace_df[~trace_df["source"].isin(artifacts)]["source"].unique().tolist()
+    missing_targets = trace_df[~trace_df["target"].isin(artifacts)]["target"].unique().tolist()
+    if len(missing_sources) + len(missing_targets) > threshold:
+        raise Exception(f"Undefined artifacts in traces: \nTargets={missing_targets}\nSources={missing_sources}")
     return trace_df[trace_df["source"].isin(artifacts) & trace_df["target"].isin(artifacts)]
 
 
