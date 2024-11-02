@@ -17,7 +17,6 @@ class KatFormatter(IFormatter):
         for i, (s_id, t_id, label) in enumerate(trace_iterator_labeled(dataset)):
             texts1.append(artifact_map[s_id])
             texts2.append(artifact_map[t_id])
-            label = label * 0.5
             labels.append(label)
 
         for artifact_body in artifact_df["content"]:
