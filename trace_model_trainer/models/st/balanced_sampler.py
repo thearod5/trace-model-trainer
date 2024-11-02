@@ -86,4 +86,6 @@ class BalancedSampler(Sampler):
 
         # Shuffle all batches at the end
         np.random.shuffle(batches)
+        assert len(batches) > 0, "No batches resulted from BalancedSampler."
+        assert len(batches[0]) > 0, f"An empty batch was found in batches ({batches})"
         return batches
