@@ -82,7 +82,8 @@ class BalancedSampler(Sampler):
 
             # Check if the batch size is correct
             if len(batch) == self.batch_size:
-                batches.append(batch)
+                print("Batch does not contain enough samples...")
+            batches.append(batch)
 
             pos_pointer += n_pos_per_batch
             neg_pointer += n_neg_per_batch
