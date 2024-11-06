@@ -81,7 +81,7 @@ class BalancedSampler(Sampler):
             np.random.shuffle(batch)  # Shuffle within the batch to mix positives and negatives
 
             # Check if the batch size is correct
-            if len(batch) == self.batch_size:
+            if len(batch) != self.batch_size:
                 print("Batch does not contain enough samples...")
             batches.append(batch)
 
