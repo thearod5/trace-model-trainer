@@ -4,12 +4,16 @@ from typing import List
 
 import numpy as np
 from datasets import Dataset
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
+from trace_model_trainer.utils import clear_memory
 
 
 def create_augmented_dataset(texts: List[str]):
     aug_methods = ["important"]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
-    n_pos = 1
+    n_pos = 3
 
     top_words = get_top_words(texts)
     top_words_set = set(top_words)
@@ -139,3 +143,18 @@ def generate_ngraphs(sentences: List[str]):
 
 def generate_ngrams(tokens, n):
     return zip(*[tokens[i:] for i in range(n)])
+
+
+def calculate_hard_negatives(texts: List[str]):
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    embeddings = model.encode(texts)
+    similarity_matrix = cosine_similarity(embeddings, embeddings)
+
+    text2negatives = {}
+
+    for i, text in enumerate(texts):
+        negatives = [b[1] for b in sorted(zip(similarity_matrix[i], texts), key=lambda t: t[0], reverse=True)]
+        text2negatives[text] = negatives
+
+    clear_memory(model)
+    return text2negatives
