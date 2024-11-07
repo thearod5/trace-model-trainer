@@ -25,7 +25,7 @@ DATASETS = [
 ]
 DATASETS = DATASETS[:1]
 MODEL_NAME = "all-MiniLM-L6-v2"
-EPOCHS = 1
+EPOCHS = 2
 BATCH_SIZE = 4
 LEARNING_RATE = 5e-5
 
@@ -71,7 +71,8 @@ def main():
             "eval_strategy": "epoch",
             "eval_steps": 1,
             "load_best_model_at_end": True,
-            "metric_for_best_model": "eval_eval_loss"
+            "metric_for_best_model": "eval_eval_loss",
+            "greater_is_better": False
         }
     )
 

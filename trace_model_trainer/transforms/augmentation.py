@@ -8,7 +8,7 @@ from datasets import Dataset
 
 def create_augmented_dataset(texts: List[str]):
     print("Creating augmented dataset")
-    n_pos = 3
+    n_pos = 1
 
     top_words = get_top_words(texts)
     top_words_set = set(top_words)
