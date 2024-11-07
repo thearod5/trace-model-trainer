@@ -7,6 +7,7 @@ from datasets import Dataset
 
 
 def create_augmented_dataset(texts: List[str]):
+    aug_methods = ["dirty", "important"]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
     n_pos = 1
 
@@ -19,6 +20,7 @@ def create_augmented_dataset(texts: List[str]):
 
     for text in texts:
         # Create positive examples
+        n_added = 0
         text_words_set = set(text.split())
         text_common_words = list(top_words_set.intersection(text_words_set))
         text_important_words = list(text_words_set.difference(top_words_set))
@@ -27,27 +29,32 @@ def create_augmented_dataset(texts: List[str]):
         text1.append(text)
         text2.append(text)
         labels.append(1)
+        n_added += 1
 
         # Add dirty identity combinations
-        dirty_combinations = generate_combinations(text, text_common_words)
-        if len(dirty_combinations) == 0:
-            raise Exception("No dirty combinations found")
+        if "dirty" in aug_methods:
+            dirty_combinations = generate_combinations(text, text_common_words)
+            if len(dirty_combinations) == 0:
+                raise Exception("No dirty combinations found")
 
-        selected_dirty = np.random.choice(dirty_combinations, size=n_pos)
-        for dirty in selected_dirty:
-            text1.append(text)
-            text2.append(dirty)
-            labels.append(1)
+            selected_dirty = np.random.choice(dirty_combinations, size=n_pos)
+            for dirty in selected_dirty:
+                text1.append(text)
+                text2.append(dirty)
+                labels.append(1)
+                n_added += 1
 
         # Add important words
-        selected_augmentations = np.random.choice(text_important_words, size=n_pos)
-        for a_text in selected_augmentations:
-            text1.append(text)
-            text2.append(a_text)
-            labels.append(1)
+        if "important" in aug_methods:
+            selected_augmentations = np.random.choice(text_important_words, size=n_pos)
+            for a_text in selected_augmentations:
+                text1.append(text)
+                text2.append(a_text)
+                labels.append(1)
+                n_added += 1
 
         # Generate equal number of negative examples
-        negative_texts = np.random.choice(texts, size=len(selected_augmentations))
+        negative_texts = np.random.choice(texts, size=n_added)
         for other in negative_texts:
             if text == 0:
                 continue
