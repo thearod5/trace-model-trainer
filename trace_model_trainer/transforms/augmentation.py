@@ -18,9 +18,8 @@ def create_augmented_dataset(texts: List[str]):
 
     for text in texts:
         # Create positive examples
-        text_common_words = list(set(top_words).intersection(set(text.split())))
-        augmented_texts = generate_combinations(text, text_common_words, len(text_common_words) - 1)
-        selected_augmentations = np.random.choice(augmented_texts, size=n_pos)
+        text_important_words = list(set(text.split()).difference(set(top_words)))
+        selected_augmentations = np.random.choice(text_important_words, size=n_pos)
         for a_text in selected_augmentations:
             text1.append(text)
             text2.append(a_text)

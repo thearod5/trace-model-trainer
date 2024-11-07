@@ -27,7 +27,7 @@ DATASETS = DATASETS[:1]
 MODEL_NAME = "all-MiniLM-L6-v2"
 EPOCHS = 2
 BATCH_SIZE = 4
-LEARNING_RATE = 5e-6
+LEARNING_RATE = 5e-5
 
 splitter = SplitterFactory.QUERY.create(group_col="target")
 
