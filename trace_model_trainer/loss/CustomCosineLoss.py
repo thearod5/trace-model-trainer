@@ -13,6 +13,7 @@ class CustomCosineEvaluator(SentenceEvaluator):
     def __init__(self, dataset: TraceDataset):
         super().__init__()
         self.dataset = ClassificationFormatter().format(dataset)
+        print("Creating Custom Cosine Evaluator")
 
     def __call__(
             self, model: "SentenceTransformer", output_path: str = None, epoch: int = -1, steps: int = -1
@@ -32,5 +33,6 @@ class CustomCosineEvaluator(SentenceEvaluator):
             ))
 
         metrics = calculate_prediction_metrics(predictions)
+        print(metrics)
 
         return metrics
