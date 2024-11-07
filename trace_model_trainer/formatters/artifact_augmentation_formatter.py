@@ -5,7 +5,7 @@ from trace_model_trainer.tdata.augmentation import generate_combinations, get_to
 from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
-class ArtifactTrainingFormatter(IFormatter):
+class ArtifactAugmentationFormatter(IFormatter):
 
     def format(self, dataset: TraceDataset) -> Dataset:
         artifact_texts = list(dataset.artifact_df["content"])

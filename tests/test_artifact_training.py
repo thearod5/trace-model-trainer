@@ -5,7 +5,7 @@ from sentence_transformers.losses import ContrastiveTensionLoss
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
-from trace_model_trainer.formatters.artifact_augmentation_formatter import ArtifactTrainingFormatter
+from trace_model_trainer.formatters.artifact_augmentation_formatter import ArtifactAugmentationFormatter
 from trace_model_trainer.formatters.contrastive_tension_formatter import ContrastiveTensionFormatter
 from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
 from trace_model_trainer.models.st_model import STModel
@@ -50,7 +50,7 @@ def main():
 
     # Create Loss
     loss = ContrastiveTensionLoss(st_model.get_model())
-    train_dataset = ArtifactTrainingFormatter().format(dataset)
+    train_dataset = ArtifactAugmentationFormatter().format(dataset)
     val_dataset = ContrastiveTensionFormatter().format(dataset)
 
     # Create Trainer
