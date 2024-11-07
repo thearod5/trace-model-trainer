@@ -29,7 +29,10 @@ def create_augmented_dataset(texts: List[str]):
         labels.append(1)
 
         # Add dirty identity combinations
-        selected_dirty = np.random.choice(generate_combinations(text, text_common_words), size=n_pos)
+        dirty_combinations = generate_combinations(text, text_common_words)
+        if len(dirty_combinations) == 0:
+            raise Exception("No dirty combinations found")
+        selected_dirty = np.random.choice(dirty_combinations, size=n_pos)
         for dirty in selected_dirty:
             text1.append(text)
             text2.append(dirty)
@@ -88,14 +91,16 @@ def remove_words(text: str, words: List[str]):
     return ' '.join([w for w in text.split() if w.lower() not in words])
 
 
-def generate_combinations(text, words, group_size: int = 3):
+def generate_combinations(text, words, group_size: int = None):
     """
     Generates combinations of removal of words.
     :param text: The text to remove words from.
     :param words: List of words to remove.
-    :param group_size: The size of combinations to consider.
+    :param group_size: The size of combinations to consider. Defaults to length of words - 1.
     :return: List of combinations of text with words removed.
     """
+    if group_size is None:
+        group_size = len(words) - 1
     # Split the text into individual words
     text_words = text.split()
 
