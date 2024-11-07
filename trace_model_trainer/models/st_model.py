@@ -25,8 +25,8 @@ class STModel(ITraceModel):
 
     def train(self,
               train_dataset: Dataset | DatasetDict | Dict[str, Dataset],
-              eval_dataset: Dataset | DatasetDict | Dict[str, Dataset],
               losses: Dict[str, nn.Module],
+              eval_dataset: Dataset | DatasetDict | Dict[str, Dataset] = None,
               output_path=None,
               args: Dict = None,
               batch_size: int = 8,
@@ -73,10 +73,12 @@ class STModel(ITraceModel):
         for k, v in args.items():
             setattr(trainer_args, k, v)
 
+        if eval_dataset:
+            kwargs["eval_dataset"] = eval_dataset
+
         trainer = trainer_class(self.get_model(),
                                 args=trainer_args,
                                 train_dataset=train_dataset,
-                                eval_dataset=eval_dataset,
                                 loss=losses,
                                 **kwargs)
 

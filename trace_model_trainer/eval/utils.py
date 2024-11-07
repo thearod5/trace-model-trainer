@@ -28,16 +28,21 @@ def eval_model(model: ITraceModel,
             write_json({"predictions": predictions}, save_prediction_path)
 
         # Calculate metrics
-        query2preds = _group_predictions(dataset_predictions)
-        query2preds = {query: sorted(preds, key=lambda x: x.score, reverse=True) for query, preds in query2preds.items()}
-        map_score = calculate_map(query2preds)
-        mrr_score = calculate_mrr(query2preds)
-        ndcg_score = calculate_ndcg(query2preds)
-        dataset_metrics = {"map": map_score, "mrr": mrr_score, "ndcg": ndcg_score}
+        dataset_metrics = calculate_prediction_metrics(dataset_predictions)
         metrics[dataset_name] = dataset_metrics
         predictions[dataset_name] = dataset_predictions
 
     return predictions, metrics
+
+
+def calculate_prediction_metrics(dataset_predictions):
+    query2preds = _group_predictions(dataset_predictions)
+    query2preds = {query: sorted(preds, key=lambda x: x.score, reverse=True) for query, preds in query2preds.items()}
+    map_score = calculate_map(query2preds)
+    mrr_score = calculate_mrr(query2preds)
+    ndcg_score = calculate_ndcg(query2preds)
+    dataset_metrics = {"map": map_score, "mrr": mrr_score, "ndcg": ndcg_score}
+    return dataset_metrics
 
 
 def _group_predictions(predictions: List[TracePrediction]):

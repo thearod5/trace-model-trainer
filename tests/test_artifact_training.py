@@ -6,7 +6,7 @@ from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
 from trace_model_trainer.formatters.artifact_augmentation_formatter import ArtifactAugmentationFormatter
-from trace_model_trainer.formatters.contrastive_tension_formatter import ContrastiveTensionFormatter
+from trace_model_trainer.loss.CustomCosineLoss import CustomCosineEvaluator
 from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
@@ -51,17 +51,16 @@ def main():
     # Create Loss
     loss = ContrastiveTensionLoss(st_model.get_model())
     train_dataset = ArtifactAugmentationFormatter().format(dataset)
-    val_dataset = ContrastiveTensionFormatter().format(dataset)
 
     # Create Trainer
     st_model.train(
         train_dataset={"train": train_dataset},
-        eval_dataset={"eval": val_dataset},
-        losses={"train": loss, "eval": loss},
+        losses={"train": loss},
         output_path=os.path.join(context.get_base_path(), "model"),
         batch_size=BATCH_SIZE,
         learning_rate=LEARNING_RATE,
         trainer_class=BalancedTrainer,
+        evaluator=CustomCosineEvaluator(dataset),
         args={
             "num_train_epochs": EPOCHS,
             "per_device_train_batch_size": BATCH_SIZE,
@@ -71,9 +70,9 @@ def main():
             "eval_strategy": "epoch",
             "eval_steps": 1,
             "load_best_model_at_end": True,
-            "metric_for_best_model": "eval_eval_loss",
-            "greater_is_better": False
-        }
+            "metric_for_best_model": "eval_map",
+            "greater_is_better": True
+        },
     )
 
     _, after_metrics = eval_model(st_model, dataset)
