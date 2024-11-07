@@ -1,5 +1,7 @@
+from collections import defaultdict
 from typing import Dict, Union
 
+from datasets import tqdm
 from sentence_transformers.evaluation import SentenceEvaluator
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -22,15 +24,22 @@ class CustomCosineEvaluator(SentenceEvaluator):
         embeddings = model.encode(texts, show_progress_bar=True)
         text2embeddings = {t: e for t, e in zip(texts, embeddings)}
 
-        predictions = []
+        query2candidates = defaultdict(list)
         for d in self.dataset:
-            score = cosine_similarity([text2embeddings[d["sentence1"]]], [text2embeddings[d["sentence2"]]])[0][0]
-            predictions.append(TracePrediction(
-                source=d["sentence1"],
-                target=d["sentence2"],
-                label=d["label"],
-                score=score
-            ))
+            query2candidates[d["sentence1"]].append(d)
+
+        predictions = []
+        for query, candidates in tqdm(query2candidates.items()):
+            sources = [text2embeddings[query]]
+            targets = [text2embeddings[c["sentence2"]] for c in candidates]
+            scores = cosine_similarity(sources, targets)[0]
+            for c, score in zip(candidates, scores):
+                predictions.append(TracePrediction(
+                    source=c["sentence1"],
+                    target=c["sentence2"],
+                    label=c["label"],
+                    score=score
+                ))
 
         metrics = calculate_prediction_metrics(predictions)
 
