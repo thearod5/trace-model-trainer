@@ -25,7 +25,7 @@ DATASETS = [
 ]
 DATASETS = DATASETS[:1]
 MODEL_NAME = "all-MiniLM-L6-v2"
-EPOCHS = 2
+EPOCHS = 1
 BATCH_SIZE = 4
 LEARNING_RATE = 5e-5
 
@@ -40,7 +40,7 @@ def main():
     # Create Datasets
     # os.path.expanduser("~/projects/trace-model-trainer/res/test")
     # 364882
-    dataset = load_traceability_dataset("thearod5/CCHIT")
+    dataset = load_traceability_dataset(os.path.expanduser("~/projects/trace-model-trainer/res/test"))
 
     # Load Model
     st_model = STModel(MODEL_NAME)

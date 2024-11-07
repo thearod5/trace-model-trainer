@@ -32,6 +32,7 @@ def create_augmented_dataset(texts: List[str]):
         dirty_combinations = generate_combinations(text, text_common_words)
         if len(dirty_combinations) == 0:
             raise Exception("No dirty combinations found")
+
         selected_dirty = np.random.choice(dirty_combinations, size=n_pos)
         for dirty in selected_dirty:
             text1.append(text)
