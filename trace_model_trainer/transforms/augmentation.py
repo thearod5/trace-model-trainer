@@ -15,7 +15,7 @@ def create_augmented_dataset(texts: List[str]):
     print("Creating augmented dataset")
     n_pos = 1
 
-    top_words = get_top_words(texts)
+    top_words = get_top_words(texts, 20)
     top_words_set = set(top_words)
 
     text1 = []
@@ -67,8 +67,8 @@ def create_augmented_dataset(texts: List[str]):
             labels.append(0)
 
     return Dataset.from_dict({
-        "text1": text1,
-        "text2": text2,
+        "text1": text2,
+        "text2": text1,
         "label": labels
     })
 
