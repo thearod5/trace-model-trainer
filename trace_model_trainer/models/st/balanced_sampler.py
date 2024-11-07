@@ -4,7 +4,7 @@ from torch.utils.data import ConcatDataset, Sampler
 
 
 class BalancedSampler(Sampler):
-    def __init__(self, dataset: Dataset, batch_size: int, neg_sample_ratio: float = 3):
+    def __init__(self, dataset: Dataset, batch_size: int, neg_sample_ratio: float = 1):
         print("Using BalancedSampler")
         assert batch_size is not None
         assert batch_size % (neg_sample_ratio + 1) == 0, f"Batch size ({batch_size}) must be divisible by {neg_sample_ratio + 1}"
