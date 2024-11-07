@@ -7,7 +7,7 @@ from datasets import Dataset
 
 
 def create_augmented_dataset(texts: List[str]):
-    aug_methods = ["dirty", "important"]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
+    aug_methods = ["important"]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
     n_pos = 1
 
