@@ -8,9 +8,10 @@ from datasets import Dataset
 
 def create_augmented_dataset(texts: List[str]):
     print("Creating augmented dataset")
-    n_pos = 5
+    n_pos = 3
 
     top_words = get_top_words(texts)
+    top_words_set = set(top_words)
 
     text1 = []
     text2 = []
@@ -18,7 +19,23 @@ def create_augmented_dataset(texts: List[str]):
 
     for text in texts:
         # Create positive examples
-        text_important_words = list(set(text.split()).difference(set(top_words)))
+        text_words_set = set(text.split())
+        text_common_words = list(top_words_set.intersection(text_words_set))
+        text_important_words = list(text_words_set.difference(top_words_set))
+
+        # Add identity
+        text1.append(text)
+        text2.append(text)
+        labels.append(1)
+
+        # Add dirty identity combinations
+        selected_dirty = np.random.choice(generate_combinations(text, text_common_words), size=n_pos)
+        for dirty in selected_dirty:
+            text1.append(text)
+            text2.append(dirty)
+            labels.append(1)
+
+        # Add important words
         selected_augmentations = np.random.choice(text_important_words, size=n_pos)
         for a_text in selected_augmentations:
             text1.append(text)
