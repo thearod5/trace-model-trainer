@@ -19,20 +19,6 @@ class BalancedSampler(Sampler):
 
         self.batches = self.create_batches()
 
-    @staticmethod
-    def extract_indices(dataset: Dataset | ConcatDataset):
-        if isinstance(dataset, Dataset):
-            df = dataset.to_pandas()
-            pos_indices = df[df["label"] == 1].index.to_list()
-            neg_indices = df[df["label"] == 0].index.to_list()
-        else:
-            pos_indices = []
-            neg_indices = []
-            for i, item in enumerate(dataset):
-                (pos_indices if item["label"] == 1 else neg_indices).append(i)
-
-        return pos_indices, neg_indices
-
     def __iter__(self):
         """
         Create iterator over balanced training data.
@@ -93,3 +79,17 @@ class BalancedSampler(Sampler):
         assert len(batches) > 0, "No batches resulted from BalancedSampler."
         assert len(batches[0]) > 0, f"An empty batch was found in batches ({batches})"
         return batches
+
+    @staticmethod
+    def extract_indices(dataset: Dataset | ConcatDataset):
+        if isinstance(dataset, Dataset):
+            df = dataset.to_pandas()
+            pos_indices = df[df["label"] == 1].index.to_list()
+            neg_indices = df[df["label"] == 0].index.to_list()
+        else:
+            pos_indices = []
+            neg_indices = []
+            for i, item in enumerate(dataset):
+                (pos_indices if item["label"] == 1 else neg_indices).append(i)
+
+        return pos_indices, neg_indices
