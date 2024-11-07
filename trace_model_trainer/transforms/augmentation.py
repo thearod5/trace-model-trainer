@@ -11,9 +11,9 @@ from trace_model_trainer.utils import clear_memory
 
 
 def create_augmented_dataset(texts: List[str]):
-    aug_methods = ["important"]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
+    aug_methods = ["important", "dirty"]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
-    n_pos = 3
+    n_pos = 1
 
     top_words = get_top_words(texts)
     top_words_set = set(top_words)
@@ -58,7 +58,7 @@ def create_augmented_dataset(texts: List[str]):
                 n_added += 1
 
         # Generate equal number of negative examples
-        negative_texts = np.random.choice(texts, size=n_added)
+        negative_texts = np.random.choice(texts, size=(n_added * 2))
         for other in negative_texts:
             if text == 0:
                 continue
