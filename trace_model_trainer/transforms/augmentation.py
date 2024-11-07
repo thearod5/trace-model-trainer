@@ -2,32 +2,44 @@ from collections import Counter
 from itertools import combinations
 from typing import List
 
-
-def create_augmentations():
-    text_words = [w.strip().lower() for w in curr.split()]
-    text_common_words = list(set(common_words).intersection(set(text_words)))
-
-    for i in range(n_per_text):
-        words_to_remove = np.random.choice(text_common_words, 3, replace=False)
-        text1.append(curr)
-        text2.append(remove_common_words(curr, remove_words=words_to_remove))
-        labels.append(1)
-    for other in artifact_texts:
-        if curr == 0:
-            continue
-        text1.append(curr)
-        text2.append(other)
-        labels.append(0)
+import numpy as np
+from datasets import Dataset
 
 
-def remove_words(text: str, words: List[str]):
-    """
-    Removes words from text.
-    :param text: The text to remove words from.
-    :param words: List of words to remove
-    :return: The text with words removed.
-    """
-    return ' '.join([w for w in text.split() if w.lower() not in words])
+def create_augmented_dataset(texts: List[str]):
+    print("Creating augmented dataset")
+    n_pos = 5
+
+    top_words = get_top_words(texts)
+
+    text1 = []
+    text2 = []
+    labels = []
+
+    for text in texts:
+        # Create positive examples
+        text_common_words = list(set(top_words).intersection(set(text.split())))
+        augmented_texts = generate_combinations(text, text_common_words, len(text_common_words) - 1)
+        selected_augmentations = np.random.choice(augmented_texts, size=n_pos)
+        for a_text in selected_augmentations:
+            text1.append(text)
+            text2.append(a_text)
+            labels.append(1)
+
+        # Generate equal number of negative examples
+        negative_texts = np.random.choice(texts, size=len(selected_augmentations))
+        for other in negative_texts:
+            if text == 0:
+                continue
+            text1.append(text)
+            text2.append(other)
+            labels.append(0)
+
+    return Dataset.from_dict({
+        "text1": text1,
+        "text2": text2,
+        "label": labels
+    })
 
 
 def get_top_words(texts: List[str], top_n: int = 30):
@@ -48,6 +60,16 @@ def get_top_words(texts: List[str], top_n: int = 30):
     common_word_map = list(sorted(word2count.items(), key=lambda t: t[1], reverse=True))[:top_n]
     common_words = [w[0] for w in common_word_map]
     return common_words
+
+
+def remove_words(text: str, words: List[str]):
+    """
+    Removes words from text.
+    :param text: The text to remove words from.
+    :param words: List of words to remove
+    :return: The text with words removed.
+    """
+    return ' '.join([w for w in text.split() if w.lower() not in words])
 
 
 def generate_combinations(text, words, group_size: int = 3):
