@@ -13,7 +13,7 @@ from trace_model_trainer.utils import clear_memory
 def create_augmented_dataset(texts: List[str]):
     aug_methods = ["important", "dirty"]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
-    n_pos = 1
+    n_pos = 2
 
     top_words = get_top_words(texts)
     top_words_set = set(top_words)
