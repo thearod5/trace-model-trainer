@@ -19,7 +19,7 @@ class CustomCosineEvaluator(SentenceEvaluator):
             self, model: "SentenceTransformer", output_path: str = None, epoch: int = -1, steps: int = -1
     ) -> Union[float, Dict[str, float]]:
         texts = list(set(self.dataset["sentence1"]).union(set(self.dataset["sentence2"])))
-        embeddings = model.encode(texts)
+        embeddings = model.encode(texts, show_progress_bar=True)
         text2embeddings = {t: e for t, e in zip(texts, embeddings)}
 
         predictions = []
@@ -33,6 +33,5 @@ class CustomCosineEvaluator(SentenceEvaluator):
             ))
 
         metrics = calculate_prediction_metrics(predictions)
-        print(metrics)
 
         return metrics
