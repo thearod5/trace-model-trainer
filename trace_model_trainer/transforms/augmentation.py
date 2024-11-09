@@ -23,8 +23,8 @@ np.random.seed(1600)
 def create_augmented_dataset(texts: List[str]):
     aug_methods = [
         "identity",
-        # "important",
-        # "dirty"
+        "important",
+        "dirty"
         # "ngrams"
     ]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
