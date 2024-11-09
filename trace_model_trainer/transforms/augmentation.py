@@ -29,7 +29,7 @@ def create_augmented_dataset(texts: List[str]):
     ]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
 
-    text2important_words = get_tfidf_important_words(texts)
+    text2phrase = get_tfidf_important_phrase(texts)
 
     text1 = []
     text2 = []
@@ -54,19 +54,23 @@ def create_augmented_dataset(texts: List[str]):
             n_pos += 1
 
         if "important" in aug_methods:
-            text_important_words = text2important_words[text]
-            text_important_words = np.random.choice(text_important_words, min(GENERATIONS_PER_SAMPLE, len(text_important_words)))
-            if len(text_important_words) > 0:
-                for a_text in text_important_words:
-                    text1.append(text)
-                    text2.append(a_text)
-                    labels.append(.75)
-                    n_pos += 1
+            text_phrase, text_important_words = text2phrase[text]
+
+            text1.append(text)
+            text2.append(text_phrase)
+            labels.append(1)
+
+            # text_important_words = np.random.choice(text_important_words, min(GENERATIONS_PER_SAMPLE, len(text_important_words)))
+            # for a_text in text_important_words:
+            #     text1.append(text)
+            #     text2.append(a_text)
+            #     labels.append(.75)
+            #     n_pos += 1
 
         if "dirty" in aug_methods:
-            text_important_words = text2important_words[text]
+            text_phrase, text_important_words = text2phrase[text]
             text_common_words = [w for w in split(text) if w.lower() not in text_important_words]
-            text_common_words = text_common_words[:10]
+            text_common_words = np.random.choice(text_common_words, 3)
             for common_word in text_common_words:
                 text1.append(text)
                 text2.append(common_word)
@@ -79,6 +83,7 @@ def create_augmented_dataset(texts: List[str]):
             text2.append(other)
             labels.append(0)
 
+        a = 1
     print("Training Data:\n", pd.Series(labels).value_counts())
 
     return Dataset.from_dict({
@@ -97,37 +102,7 @@ def create_text2important_words(texts: List[str], k: int = 20):
     return text2words
 
 
-def get_common_words(texts: List[str]):
-    # TF-IDF Analysis
-    vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(texts)
-
-    corpus_vocabulary = vectorizer.get_feature_names_out()
-    text2words = {}
-    for row_index in range(X.shape[0]):
-        text = texts[row_index]
-        text_word2score = {word: X[row_index, i] for i, word in enumerate(corpus_vocabulary)}
-        text_word2score = {word: word_score for word, word_score in sorted(text_word2score.items(), key=lambda b: b[1], reverse=True)
-                           if word_score > 0}
-        text2words[text] = text_word2score
-    idf_scores = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
-
-    # Calculate the bottom quartile (25th percentile) of IDF scores
-    idf_values = np.array(list(idf_scores.values()))
-    bottom_quartile_threshold = np.percentile(idf_values, 10)
-
-    # calculate important words
-    text2words = defaultdict(list)
-    for text in texts:
-        word_score_map = {w: idf_scores.get(w, 0) for w in split(text)}
-        words_sorted = sorted(word_score_map.items(), key=lambda w, s: s, reverse=True)
-        text2words[text] = words_sorted[:5]
-    # Identify potential stop words (words with low IDF)
-    stop_words_candidates = [word for word, score in idf_scores.items() if score + .01 <= bottom_quartile_threshold]
-    return stop_words_candidates
-
-
-def get_tfidf_important_words(texts: List[str]):
+def get_tfidf_important_phrase(texts: List[str]):
     # TF-IDF Analysis
     vectorizer = TfidfVectorizer(stop_words=STOP_WORDS)
     X = vectorizer.fit_transform(texts)
@@ -146,23 +121,19 @@ def get_tfidf_important_words(texts: List[str]):
         # Sort word scores in descending order
         sorted_word_scores = sorted(word_scores, key=lambda x: x[1], reverse=True)
 
-        # Select the top 50% words
-        n_keep = len(sorted_word_scores) // 2
-        important_words = [corpus_vocabulary[idx] for idx, _ in sorted_word_scores[:n_keep]]
+        # Extract phrase containing important words
+        # TODO: Instead of fixed numbers, find outliers and include those
+        text = texts[row_index]
+        text_id = text.lower()
+        important_words = [corpus_vocabulary[idx] for idx, _ in sorted_word_scores[:5]]
+        word_indices = [text_id.index(word) for word in important_words[:3]]
 
-        text2words[texts[row_index]] = important_words
+        start_idx = min(word_indices)
+        end_idx = max(word_indices)
+
+        text2words[text] = (text[start_idx: end_idx], important_words)
 
     return text2words
-
-
-def create_word2text(texts: List[str], most_common_first: bool = True):
-    word2text = defaultdict(list)
-    for t in texts:
-        for t_word in split(t):
-            word2text[t_word.lower()].append(t)
-    sorted_word2text = {k: v for k, v in  # most used to least used
-                        sorted(word2text.items(), reverse=most_common_first, key=lambda w2t: len(w2t[1]))}
-    return sorted_word2text
 
 
 def get_negatives(text: str, candidates: List[str], n_items: int = None):
@@ -170,26 +141,6 @@ def get_negatives(text: str, candidates: List[str], n_items: int = None):
     candidate2intersection = {c: set(split(c)).intersection(text_words) for c in candidates}
     sorted_candidates = sorted(candidate2intersection.items(), key=lambda t: len(t[1]), reverse=False)
     return [c[0] for c in sorted_candidates[:n_items]]
-
-
-def get_top_words(texts: List[str], top_n: int = 30):
-    """
-    Calculates the top n words in texts.
-    :param texts: The texts to analyze.
-    :param top_n: The number of top words to return.
-    :return: List of top words used in texts.
-    """
-    word2count = {}
-    for a_text in texts:
-        for word in a_text.split():
-            word_id = word.lower()
-            if word_id not in word2count:
-                word2count[word_id] = 0
-            word2count[word_id] += 1
-
-    common_word_map = list(sorted(word2count.items(), key=lambda t: t[1], reverse=True))[:top_n]
-    common_words = [w[0] for w in common_word_map]
-    return common_words
 
 
 def remove_words(text: str, words: List[str]):
@@ -225,6 +176,64 @@ def generate_dirty_combinations(text, words, group_size: int = None):
         resulting_texts.append(" ".join(modified_text))
 
     return resulting_texts
+
+
+def split(text: str):
+    return re.findall(r'\b\w+\b', text.lower())
+
+
+#
+# RETIRED
+#
+
+def get_top_words(texts: List[str], top_n: int = 30):
+    """
+    Calculates the top n words in texts.
+    :param texts: The texts to analyze.
+    :param top_n: The number of top words to return.
+    :return: List of top words used in texts.
+    """
+    word2count = {}
+    for a_text in texts:
+        for word in a_text.split():
+            word_id = word.lower()
+            if word_id not in word2count:
+                word2count[word_id] = 0
+            word2count[word_id] += 1
+
+    common_word_map = list(sorted(word2count.items(), key=lambda t: t[1], reverse=True))[:top_n]
+    common_words = [w[0] for w in common_word_map]
+    return common_words
+
+
+def get_common_words(texts: List[str]):
+    # TF-IDF Analysis
+    vectorizer = TfidfVectorizer()
+    X = vectorizer.fit_transform(texts)
+
+    corpus_vocabulary = vectorizer.get_feature_names_out()
+    text2words = {}
+    for row_index in range(X.shape[0]):
+        text = texts[row_index]
+        text_word2score = {word: X[row_index, i] for i, word in enumerate(corpus_vocabulary)}
+        text_word2score = {word: word_score for word, word_score in sorted(text_word2score.items(), key=lambda b: b[1], reverse=True)
+                           if word_score > 0}
+        text2words[text] = text_word2score
+    idf_scores = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
+
+    # Calculate the bottom quartile (25th percentile) of IDF scores
+    idf_values = np.array(list(idf_scores.values()))
+    bottom_quartile_threshold = np.percentile(idf_values, 10)
+
+    # calculate important words
+    text2words = defaultdict(list)
+    for text in texts:
+        word_score_map = {w: idf_scores.get(w, 0) for w in split(text)}
+        words_sorted = sorted(word_score_map.items(), key=lambda w, s: s, reverse=True)
+        text2words[text] = words_sorted[:5]
+    # Identify potential stop words (words with low IDF)
+    stop_words_candidates = [word for word, score in idf_scores.items() if score + .01 <= bottom_quartile_threshold]
+    return stop_words_candidates
 
 
 def generate_ngram_links(texts: List[str], n: int = 2):
@@ -264,7 +273,3 @@ def calculate_hard_negatives(texts: List[str]):
 
     clear_memory(model)
     return text2negatives
-
-
-def split(text: str):
-    return re.findall(r'\b\w+\b', text.lower())

@@ -42,7 +42,7 @@ def main():
     # os.path.expanduser("~/projects/trace-model-trainer/res/test")
     # 364882
     dataset = load_traceability_dataset("thearod5/cchit")
-    train_dataset, _ = QuerySplitter().split(dataset, 0.1)
+    train_dataset, _ = QuerySplitter().split(dataset, 0.009)
 
     # Load Model
     st_model = STModel(MODEL_NAME)
