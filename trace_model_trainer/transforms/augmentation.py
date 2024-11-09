@@ -83,7 +83,6 @@ def create_augmented_dataset(texts: List[str]):
             text2.append(other)
             labels.append(0)
 
-        a = 1
     print("Training Data:\n", pd.Series(labels).value_counts())
 
     return Dataset.from_dict({
