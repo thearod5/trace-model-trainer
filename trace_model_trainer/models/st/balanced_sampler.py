@@ -5,7 +5,7 @@ from torch.utils.data import ConcatDataset, Sampler
 
 
 class BalancedSampler(Sampler):
-    def __init__(self, dataset: Dataset, batch_size: int, neg_sample_ratio: float = 4, resample_data: bool = False):
+    def __init__(self, dataset: Dataset, batch_size: int, neg_sample_ratio: float = 4, resample_data: bool = True):
         print("Using BalancedSampler")
         super().__init__(dataset)
         self.pos_indices, self.neg_indices = self.extract_indices(dataset)
