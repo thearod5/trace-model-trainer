@@ -40,7 +40,7 @@ def main():
     # Create Datasets
     # os.path.expanduser("~/projects/trace-model-trainer/res/test")
     # 364882
-    dataset = load_traceability_dataset(os.path.expanduser("~/projects/trace-model-trainer/res/test"))
+    dataset = load_traceability_dataset("thearod5/cchit")
 
     # Load Model
     st_model = STModel(MODEL_NAME)

@@ -9,6 +9,7 @@ from datasets import Dataset
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from tqdm import tqdm
 
 from trace_model_trainer.utils import clear_memory
 
@@ -44,7 +45,7 @@ def create_augmented_dataset(texts: List[str]):
                 text2.append(b_text)
                 labels.append(1)
 
-    for text in texts:
+    for text in tqdm(texts, desc="Augmenting dataset samples"):
         # Add identity
         if "identity" in aug_methods:
             text1.append(text)
@@ -128,18 +129,29 @@ def get_common_words(texts: List[str]):
 
 def get_tfidf_important_words(texts: List[str]):
     # TF-IDF Analysis
-    vectorizer = TfidfVectorizer()
+    vectorizer = TfidfVectorizer(stop_words=STOP_WORDS)
     X = vectorizer.fit_transform(texts)
 
-    corpus_vocabulary = vectorizer.get_feature_names_out()
+    # Extract the vocabulary and the TF-IDF matrix
+    corpus_vocabulary = np.array(vectorizer.get_feature_names_out())
     text2words = {}
+
+    # Iterate through each document's row in the sparse matrix
     for row_index in range(X.shape[0]):
-        text_word2score = {word: X[row_index, i] for i, word in enumerate(corpus_vocabulary)}
-        text_word2score = {word: word_score for word, word_score in sorted(text_word2score.items(), key=lambda b: b[1], reverse=True)
-                           if word_score > 0}
-        n_keep = len(text_word2score) // 2
-        text_word2score = [word for word, word_score in list(text_word2score.items())[:n_keep] if word not in STOP_WORDS]
-        text2words[texts[row_index]] = text_word2score
+        # Get the non-zero elements in the row
+        row = X[row_index]
+        non_zero_indices = row.nonzero()[1]
+        word_scores = zip(non_zero_indices, row.data)
+
+        # Sort word scores in descending order
+        sorted_word_scores = sorted(word_scores, key=lambda x: x[1], reverse=True)
+
+        # Select the top 50% words
+        n_keep = len(sorted_word_scores) // 2
+        important_words = [corpus_vocabulary[idx] for idx, _ in sorted_word_scores[:n_keep]]
+
+        text2words[texts[row_index]] = important_words
+
     return text2words
 
 
