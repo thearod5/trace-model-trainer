@@ -1,76 +1,163 @@
-from collections import Counter
+import re
+from collections import defaultdict
 from itertools import combinations
 from typing import List
 
 import numpy as np
+import pandas as pd
 from datasets import Dataset
 from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from trace_model_trainer.utils import clear_memory
 
+STOP_WORDS = ["of", "a", "and", "so", "on", "to", "at", "by", "for", "in", "with", "is", "them", "has", "like", "allow", "be", "able",
+              "when", "that", "the", "been", "through"]
+GENERATIONS_PER_SAMPLE = 3
+DIRTY_PER_SAMPLE = 1
+np.random.seed(1600)
+
 
 def create_augmented_dataset(texts: List[str]):
-    aug_methods = ["important", "dirty"]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
+    aug_methods = [
+        "identity",
+        "important",
+        "dirty"
+        # "ngrams"
+    ]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
-    n_pos = 1
 
-    top_words = get_top_words(texts, 20)
-    top_words_set = set(top_words)
+    text2important_words = get_tfidf_important_words(texts)
 
     text1 = []
     text2 = []
     labels = []
+    n_pos = 0
+
+    # Add ngram links
+    if "ngrams" in aug_methods:
+        ngram_links = generate_ngram_links(texts)
+        for linked_texts in ngram_links:
+            for a_text, b_text in combinations(linked_texts, 2):
+                text1.append(a_text)
+                text2.append(b_text)
+                labels.append(1)
 
     for text in texts:
-        # Create positive examples
-        n_added = 0
-        text_words_set = set(text.split())
-        text_common_words = list(top_words_set.intersection(text_words_set))
-        text_important_words = list(text_words_set.difference(top_words_set))
-
         # Add identity
-        text1.append(text)
-        text2.append(text)
-        labels.append(1)
-        n_added += 1
+        if "identity" in aug_methods:
+            text1.append(text)
+            text2.append(text)
+            labels.append(1)
+            n_pos += 1
 
-        # Add dirty identity combinations
-        if "dirty" in aug_methods:
-            dirty_combinations = generate_combinations(text, text_common_words)
-            if len(dirty_combinations) == 0:
-                raise Exception("No dirty combinations found")
-
-            selected_dirty = np.random.choice(dirty_combinations, size=n_pos)
-            for dirty in selected_dirty:
-                text1.append(text)
-                text2.append(dirty)
-                labels.append(1)
-                n_added += 1
-
-        # Add important words
         if "important" in aug_methods:
-            selected_augmentations = np.random.choice(text_important_words, size=n_pos)
-            for a_text in selected_augmentations:
-                text1.append(text)
-                text2.append(a_text)
-                labels.append(1)
-                n_added += 1
+            text_important_words = text2important_words[text]
+            text_important_words = np.random.choice(text_important_words, min(GENERATIONS_PER_SAMPLE, len(text_important_words)))
+            if len(text_important_words) > 0:
+                for a_text in text_important_words:
+                    text1.append(text)
+                    text2.append(a_text)
+                    labels.append(.75)
+                    n_pos += 1
 
-        # Generate equal number of negative examples
-        negative_texts = np.random.choice(texts, size=(n_added * 2))
+        if "dirty" in aug_methods:
+            text_important_words = text2important_words[text]
+            text_common_words = [w for w in split(text) if w.lower() not in text_important_words]
+            text_common_words = text_common_words[:10]
+            for common_word in text_common_words:
+                text1.append(text)
+                text2.append(common_word)
+                labels.append(0.1)
+
+        # Sampler negatives for text
+        negative_texts = get_negatives(text, texts, int(len(text) * .10))
         for other in negative_texts:
-            if text == 0:
-                continue
             text1.append(text)
             text2.append(other)
             labels.append(0)
+
+    print("Training Data:\n", pd.Series(labels).value_counts())
 
     return Dataset.from_dict({
         "text1": text2,
         "text2": text1,
         "label": labels
     })
+
+
+def create_text2important_words(texts: List[str], k: int = 20):
+    common_words = get_common_words(texts)
+    text2words = defaultdict(list)
+    for t in texts:
+        t_important_words = [w for w in split(t) if w.lower() not in common_words and w.lower() not in STOP_WORDS]
+        text2words[t] = t_important_words
+    return text2words
+
+
+def get_common_words(texts: List[str]):
+    # TF-IDF Analysis
+    vectorizer = TfidfVectorizer()
+    X = vectorizer.fit_transform(texts)
+
+    corpus_vocabulary = vectorizer.get_feature_names_out()
+    text2words = {}
+    for row_index in range(X.shape[0]):
+        text = texts[row_index]
+        text_word2score = {word: X[row_index, i] for i, word in enumerate(corpus_vocabulary)}
+        text_word2score = {word: word_score for word, word_score in sorted(text_word2score.items(), key=lambda b: b[1], reverse=True)
+                           if word_score > 0}
+        text2words[text] = text_word2score
+    idf_scores = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
+
+    # Calculate the bottom quartile (25th percentile) of IDF scores
+    idf_values = np.array(list(idf_scores.values()))
+    bottom_quartile_threshold = np.percentile(idf_values, 10)
+
+    # calculate important words
+    text2words = defaultdict(list)
+    for text in texts:
+        word_score_map = {w: idf_scores.get(w, 0) for w in split(text)}
+        words_sorted = sorted(word_score_map.items(), key=lambda w, s: s, reverse=True)
+        text2words[text] = words_sorted[:5]
+    # Identify potential stop words (words with low IDF)
+    stop_words_candidates = [word for word, score in idf_scores.items() if score + .01 <= bottom_quartile_threshold]
+    return stop_words_candidates
+
+
+def get_tfidf_important_words(texts: List[str]):
+    # TF-IDF Analysis
+    vectorizer = TfidfVectorizer()
+    X = vectorizer.fit_transform(texts)
+
+    corpus_vocabulary = vectorizer.get_feature_names_out()
+    text2words = {}
+    for row_index in range(X.shape[0]):
+        text_word2score = {word: X[row_index, i] for i, word in enumerate(corpus_vocabulary)}
+        text_word2score = {word: word_score for word, word_score in sorted(text_word2score.items(), key=lambda b: b[1], reverse=True)
+                           if word_score > 0}
+        n_keep = len(text_word2score) // 2
+        text_word2score = [word for word, word_score in list(text_word2score.items())[:n_keep] if word not in STOP_WORDS]
+        text2words[texts[row_index]] = text_word2score
+    return text2words
+
+
+def create_word2text(texts: List[str], most_common_first: bool = True):
+    word2text = defaultdict(list)
+    for t in texts:
+        for t_word in split(t):
+            word2text[t_word.lower()].append(t)
+    sorted_word2text = {k: v for k, v in  # most used to least used
+                        sorted(word2text.items(), reverse=most_common_first, key=lambda w2t: len(w2t[1]))}
+    return sorted_word2text
+
+
+def get_negatives(text: str, candidates: List[str], n_items: int = None):
+    text_words = set(split(text))
+    candidate2intersection = {c: set(split(c)).intersection(text_words) for c in candidates}
+    sorted_candidates = sorted(candidate2intersection.items(), key=lambda t: len(t[1]), reverse=False)
+    return [c[0] for c in sorted_candidates[:n_items]]
 
 
 def get_top_words(texts: List[str], top_n: int = 30):
@@ -103,7 +190,7 @@ def remove_words(text: str, words: List[str]):
     return ' '.join([w for w in text.split() if w.lower() not in words])
 
 
-def generate_combinations(text, words, group_size: int = None):
+def generate_dirty_combinations(text, words, group_size: int = None):
     """
     Generates combinations of removal of words.
     :param text: The text to remove words from.
@@ -128,17 +215,24 @@ def generate_combinations(text, words, group_size: int = None):
     return resulting_texts
 
 
-def generate_ngraphs(sentences: List[str]):
-    n = 2  # For bigrams; change to 3 for trigrams, etc.
-    all_ngrams = []
-    for sentence in sentences:
-        tokens = sentence.split()
+def generate_ngram_links(texts: List[str], n: int = 2):
+    """
+    Finds n-grams shared across texts.
+    :param texts: The texts to analyze for n-grams.
+    :param n: The number of words to string tog
+    :return:
+    """
+    all_ngrams = defaultdict(list)
+    for sentence in texts:
+        tokens = split(sentence)
         ngrams = generate_ngrams(tokens, n)
-        all_ngrams.extend(ngrams)
-    ngram_counts = Counter(all_ngrams)
-    most_common_ngrams = ngram_counts.most_common()
-
-    return most_common_ngrams
+        for ngram in ngrams:
+            if any([word in STOP_WORDS for word in ngrams]):
+                continue
+            all_ngrams[ngram].append(sentence)
+    all_ngrams = {k: v for k, v in all_ngrams.items() if len(v) > 1}
+    ngram_links = list(all_ngrams.values())
+    return ngram_links
 
 
 def generate_ngrams(tokens, n):
@@ -158,3 +252,7 @@ def calculate_hard_negatives(texts: List[str]):
 
     clear_memory(model)
     return text2negatives
+
+
+def split(text: str):
+    return re.findall(r'\b\w+\b', text.lower())

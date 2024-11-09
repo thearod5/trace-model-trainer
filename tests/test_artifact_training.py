@@ -27,7 +27,7 @@ DATASETS = DATASETS[:1]
 MODEL_NAME = "all-MiniLM-L6-v2"
 EPOCHS = 2
 BATCH_SIZE = 4
-LEARNING_RATE = 5e-5
+LEARNING_RATE = 5e-6
 
 splitter = SplitterFactory.QUERY.create(group_col="target")
 
@@ -63,8 +63,6 @@ def main():
         evaluator=CustomCosineEvaluator(dataset),
         args={
             "num_train_epochs": EPOCHS,
-            "per_device_train_batch_size": BATCH_SIZE,
-            "per_device_eval_batch_size": BATCH_SIZE,
             "enable_full_determinism": True,
             "seed": 42,
             "eval_strategy": "epoch",

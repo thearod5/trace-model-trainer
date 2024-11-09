@@ -1,7 +1,9 @@
 from collections import defaultdict
 from typing import Dict, List, Tuple
 
+import numpy as np
 from pandas import DataFrame
+from scipy import stats
 from sklearn.metrics import average_precision_score, ndcg_score
 
 from trace_model_trainer.eval.trace_iterator import trace_iterator
@@ -38,10 +40,12 @@ def eval_model(model: ITraceModel,
 def calculate_prediction_metrics(dataset_predictions):
     query2preds = _group_predictions(dataset_predictions)
     query2preds = {query: sorted(preds, key=lambda x: x.score, reverse=True) for query, preds in query2preds.items()}
-    map_score = calculate_map(query2preds)
-    mrr_score = calculate_mrr(query2preds)
-    ndcg_score = calculate_ndcg(query2preds)
-    dataset_metrics = {"map": map_score, "mrr": mrr_score, "ndcg": ndcg_score}
+    map_score, map_lower, map_upper = calculate_map(query2preds)
+    mrr_score, mrr_lower, mrr_upper = calculate_mrr(query2preds)
+    ndcg_score, ndcg_lower, ndcg_upper = calculate_ndcg(query2preds)
+    dataset_metrics = {"map": map_score, "map_lower": map_lower, "map_upper": map_upper,
+                       "mrr": mrr_score, "mrr_lower": mrr_lower, "mrr_upper": mrr_upper,
+                       "ndcg": ndcg_score, "ndcg_lower": ndcg_lower, "ndcg_upper": ndcg_upper}
     return dataset_metrics
 
 
@@ -50,6 +54,22 @@ def _group_predictions(predictions: List[TracePrediction]):
     for trace in predictions:
         query2preds[trace.target].append(trace)
     return query2preds
+
+
+def compute_model_predictions(trace_model: ITraceModel, dataset: TraceDataset):
+    trace_map = create_trace_map(dataset.trace_df)
+
+    predictions = []
+    for source_ids, target_ids in trace_iterator(dataset):
+        source_texts = [dataset.artifact_map[a_id] for a_id in source_ids]
+        target_texts = [dataset.artifact_map[a_id] for a_id in target_ids]
+
+        similarity_matrix = trace_model.predict(source_texts, target_texts)
+        for s_index, s_id in enumerate(source_ids):
+            for t_index, t_id in enumerate(target_ids):
+                score = similarity_matrix[s_index][t_index]
+                predictions.append(TracePrediction(source=s_id, target=t_id, label=trace_map[s_id].get(t_id, 0), score=score))
+    return predictions
 
 
 def calculate_map(query2preds):
@@ -67,10 +87,10 @@ def calculate_map(query2preds):
     if len(ap_scores) == 0:
         print("No queries contained positive lnks.")
         return 0
-    return sum(ap_scores) / len(ap_scores)
+    return calculate_confidence_bounds(ap_scores)
 
 
-def calculate_mrr(query2preds: Dict[str, List[TracePrediction]]) -> float:
+def calculate_mrr(query2preds: Dict[str, List[TracePrediction]]):
     reciprocal_ranks = []
     for target, predictions in query2preds.items():
         # Sort predictions by score in descending order
@@ -82,7 +102,7 @@ def calculate_mrr(query2preds: Dict[str, List[TracePrediction]]) -> float:
         reciprocal_ranks.extend(query_ranks)
     if not reciprocal_ranks:
         return 0
-    return sum(reciprocal_ranks) / len(reciprocal_ranks)
+    return calculate_confidence_bounds(reciprocal_ranks)
 
 
 def calculate_ndcg(query2preds: Dict[str, List[TracePrediction]]):
@@ -96,24 +116,8 @@ def calculate_ndcg(query2preds: Dict[str, List[TracePrediction]]):
         ndcg = ndcg_score([labels], [scores])
         ndcg_scores.append(ndcg)
     if not ndcg_scores:
-        return 0
-    return sum(ndcg_scores) / len(ndcg_scores)
-
-
-def compute_model_predictions(trace_model: ITraceModel, dataset: TraceDataset):
-    trace_map = create_trace_map(dataset.trace_df)
-
-    predictions = []
-    for source_ids, target_ids in trace_iterator(dataset):
-        source_texts = [dataset.artifact_map[a_id] for a_id in source_ids]
-        target_texts = [dataset.artifact_map[a_id] for a_id in target_ids]
-
-        similarity_matrix = trace_model.predict(source_texts, target_texts)
-        for s_index, s_id in enumerate(source_ids):
-            for t_index, t_id in enumerate(target_ids):
-                score = similarity_matrix[s_index][t_index]
-                predictions.append(TracePrediction(source=s_id, target=t_id, label=trace_map[s_id].get(t_id, 0), score=score))
-    return predictions
+        return 0, 0, 0
+    return calculate_confidence_bounds(ndcg_scores)
 
 
 def aggregate_metrics(metrics: List[Dict], exclude_group: str = "seed") -> DataFrame:
@@ -153,3 +157,21 @@ def create_retrieval_queries(trace_dataset: TraceDataset):
     queries = [{"query": k, **v} for k, v in target_queries.items() if len(v["positive"]) > 0]
     assert len(queries) > 0
     return queries
+
+
+def calculate_confidence_bounds(data: List[float]):
+    # Calculate the mean and standard deviation
+    mean_accuracy = np.mean(data)
+    std_deviation = np.std(data, ddof=1)  # Using sample standard deviation
+
+    # Calculate the 95% confidence interval
+    confidence_level = 0.95
+    z_value = stats.norm.ppf(1 - (1 - confidence_level) / 2)  # z-value for 95% confidence
+    margin_of_error = z_value * std_deviation
+
+    lower_bound = mean_accuracy - margin_of_error
+    upper_bound = mean_accuracy + margin_of_error
+
+    # Ensure the upper bound does not exceed 1.0 (since accuracy cannot be more than 100%)
+    upper_bound = min(upper_bound, 1.0)
+    return mean_accuracy, lower_bound, upper_bound
