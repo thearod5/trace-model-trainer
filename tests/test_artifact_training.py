@@ -48,7 +48,7 @@ def main():
     st_model = STModel(MODEL_NAME)
 
     # Baseline Evaluation
-    _, before_metrics = eval_model(st_model, dataset)
+    _, before_metrics = eval_model(st_model, train_dataset)
 
     # Create Loss
     loss = ContrastiveTensionLoss(st_model.get_model())
