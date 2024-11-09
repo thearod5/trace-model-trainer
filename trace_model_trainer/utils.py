@@ -27,6 +27,8 @@ def t_id_creator(trace_row=None, source=None, target=None):
     """
     Creates trace id for row in trace file.
     :param trace_row: Row in trace data frame.
+    :param source: The source artifact id.
+    :param target: The target artifact id
     :return: Trace ID.
     """
     if trace_row is not None:
