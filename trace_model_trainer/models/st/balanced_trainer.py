@@ -10,18 +10,18 @@ class DataAugmentationCallback(TrainerCallback):
     def __init__(self, trainer):
         self.trainer = trainer
 
-    def on_epoch_end(self, args, state, control, **kwargs):
+    def on_epoch_begin(self, args, state, control, **kwargs):
         # Regenerate the augmented dataset at the beginning of each epoch
         original_dataset = self.trainer.original_dataset
-        self.trainer.train_dataset = {k: create_augmented_dataset(original_dataset[k]["texts"])
+        self.trainer.train_dataset = {k: create_augmented_dataset(original_dataset[k])
                                       for k in original_dataset.keys()}
 
 
 class BalancedTrainer(SentenceTransformerTrainer):
     def __init__(self, *args, **kwargs):
         self.original_dataset = kwargs["train_dataset"]
-        kwargs["train_dataset"] = {k: create_augmented_dataset(self.original_dataset[k]["texts"]) for k in
-                                   self.original_dataset.keys()}
+        kwargs["train_dataset"] = {k: create_augmented_dataset(self.original_dataset[k]) for k in
+                                   self.original_dataset.keys()}  # needed to ensure columns are recognized later on
         super().__init__(*args, **kwargs)
         self.add_callback(DataAugmentationCallback(self))
 

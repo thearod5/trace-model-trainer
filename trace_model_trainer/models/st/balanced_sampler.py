@@ -44,7 +44,7 @@ class BalancedSampler(Sampler):
         if self.resample_data:
             # Select negative links to use in batches
             n_negative = int(self.neg_sample_ratio * len(self.pos_indices))
-            neg_indices = np.random.choice(self.neg_indices, n_negative, replace=True).tolist()
+            neg_indices = np.random.choice(self.neg_indices, min(n_negative, len(self.neg_indices)), replace=False).tolist()
             labels = [self.dataset[i]["label"] for i in neg_indices + self.pos_indices]
             print("Batched Training Data:\n", pd.Series(labels).value_counts())
 

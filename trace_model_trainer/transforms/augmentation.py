@@ -1,11 +1,11 @@
 import re
 from collections import defaultdict
 from itertools import combinations
-from typing import List
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -20,7 +20,7 @@ DIRTY_PER_SAMPLE = 1
 np.random.seed(1600)
 
 
-def create_augmented_dataset(texts: List[str]):
+def create_augmented_dataset(dataset: DatasetDict):
     aug_methods = [
         "identity",
         "important",
@@ -28,22 +28,50 @@ def create_augmented_dataset(texts: List[str]):
         # "ngrams"
     ]  # []  # ["dirty"] # ["important"] # ["dirty", "important"]
     print("Creating augmented dataset")
-
-    text2phrase = get_tfidf_important_phrase(texts)
+    texts = list(dataset['artifact_map'].values())
+    text2phrase, corpus_important_words = get_tfidf_important_phrase(texts)
+    word2siblings = calculate_siblings(corpus_important_words)
 
     text1 = []
     text2 = []
     labels = []
     n_pos = 0
 
-    # Add ngram links
-    if "ngrams" in aug_methods:
-        ngram_links = generate_ngram_links(texts)
-        for linked_texts in ngram_links:
-            for a_text, b_text in combinations(linked_texts, 2):
-                text1.append(a_text)
-                text2.append(b_text)
-                labels.append(1)
+    artifact_map: Dict[str, str] = dataset['artifact_map']
+
+    # Add positive links
+    for trace in dataset["traces"]:
+        s_artifact = artifact_map[trace["source"]]
+        t_artifact = artifact_map[trace["target"]]
+        label = trace["label"]
+        if label <= 0:
+            continue
+
+        # Add full trace links
+        text1.append(t_artifact)
+        text2.append(s_artifact)
+        labels.append(label)
+
+        t_important_phrase, t_important_words = text2phrase[t_artifact]
+        s_important_phrase, s_important_words = text2phrase[s_artifact]
+
+        text1.append(t_important_phrase)
+        text2.append(s_important_phrase)
+        labels.append(label)
+
+        seen = set()
+        for t_important_word in t_important_words:
+            if t_important_word in seen:
+                continue
+            for s_important_word in s_important_words:
+                if s_important_word in seen:
+                    continue
+                if s_important_word in word2siblings.get(t_important_word, []):
+                    text1.append(t_important_word)
+                    text2.append(s_important_word)
+                    labels.append(label)
+                    seen.add(t_important_word)
+                    seen.add(s_important_word)
 
     for text in tqdm(texts, desc="Augmenting dataset samples"):
         # Add identity
@@ -58,7 +86,7 @@ def create_augmented_dataset(texts: List[str]):
 
             text1.append(text)
             text2.append(text_phrase)
-            labels.append(1)
+            labels.append(1.0)
 
             # text_important_words = np.random.choice(text_important_words, min(GENERATIONS_PER_SAMPLE, len(text_important_words)))
             # for a_text in text_important_words:
@@ -77,7 +105,7 @@ def create_augmented_dataset(texts: List[str]):
                 labels.append(0.1)
 
         # Sampler negatives for text
-        negative_texts = get_negatives(text, texts, int(len(text) * .10))
+        negative_texts = get_negatives(text, texts, int(len(text) * .25))
         for other in negative_texts:
             text1.append(text)
             text2.append(other)
@@ -109,6 +137,7 @@ def get_tfidf_important_phrase(texts: List[str]):
     # Extract the vocabulary and the TF-IDF matrix
     corpus_vocabulary = np.array(vectorizer.get_feature_names_out())
     text2words = {}
+    important_words_global = set()
 
     # Iterate through each document's row in the sparse matrix
     for row_index in range(X.shape[0]):
@@ -131,8 +160,9 @@ def get_tfidf_important_phrase(texts: List[str]):
         end_idx = max(word_indices)
 
         text2words[text] = (text[start_idx: end_idx], important_words)
+        important_words_global.update(set(important_words))
 
-    return text2words
+    return text2words, list(important_words_global)
 
 
 def get_negatives(text: str, candidates: List[str], n_items: int = None):
@@ -259,16 +289,16 @@ def generate_ngrams(tokens, n):
     return zip(*[tokens[i:] for i in range(n)])
 
 
-def calculate_hard_negatives(texts: List[str]):
+def calculate_siblings(texts: List[str]):
     model = SentenceTransformer("all-MiniLM-L6-v2")
     embeddings = model.encode(texts)
+    clear_memory(model)
     similarity_matrix = cosine_similarity(embeddings, embeddings)
 
-    text2negatives = {}
-
+    text2siblings = {}
+    threshold = similarity_matrix.std() + similarity_matrix.mean()
     for i, text in enumerate(texts):
-        negatives = [b[1] for b in sorted(zip(similarity_matrix[i], texts), key=lambda t: t[0], reverse=True)]
-        text2negatives[text] = negatives
+        siblings = [sibling for score, sibling in zip(similarity_matrix[i], texts) if score > threshold and sibling != text]
+        text2siblings[text] = siblings
 
-    clear_memory(model)
-    return text2negatives
+    return text2siblings
