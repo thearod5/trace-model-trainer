@@ -9,7 +9,6 @@ from datasets import Dataset, DatasetDict
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from tqdm import tqdm
 
 from trace_model_trainer.utils import clear_memory
 
@@ -41,10 +40,13 @@ def create_augmented_dataset(dataset: DatasetDict):
 
     # Add positive links
     for trace in dataset["traces"]:
-        s_artifact = artifact_map[trace["source"]]
-        t_artifact = artifact_map[trace["target"]]
+        s_artifact = trace["source"]
+        t_artifact = trace["target"]
         label = trace["label"]
         if label <= 0:
+            text1.append(t_artifact)
+            text2.append(s_artifact)
+            labels.append(label)
             continue
 
         # Add full trace links
@@ -52,64 +54,72 @@ def create_augmented_dataset(dataset: DatasetDict):
         text2.append(s_artifact)
         labels.append(label)
 
-        t_important_phrase, t_important_words = text2phrase[t_artifact]
-        s_important_phrase, s_important_words = text2phrase[s_artifact]
+        # t_important_phrase, t_important_words = text2phrase[t_artifact]
+        # s_important_phrase, s_important_words = text2phrase[s_artifact]
+        #
+        # text1.append(t_artifact)
+        # text2.append(t_important_phrase)
+        # labels.append(1)
+        #
+        # text1.append(s_artifact)
+        # text2.append(s_important_phrase)
+        # labels.append(1)
 
-        text1.append(t_important_phrase)
-        text2.append(s_important_phrase)
-        labels.append(label)
+        # link important phrases together
+        # text1.append(t_important_phrase)
+        # text2.append(s_important_phrase)
+        # labels.append(label)
+        # seen = set()
+        # for t_important_word in t_important_words:
+        #     if t_important_word in seen:
+        #         continue
+        #     for s_important_word in s_important_words:
+        #         if s_important_word in seen:
+        #             continue
+        #         if s_important_word in word2siblings.get(t_important_word, []):
+        #             text1.append(t_important_word)
+        #             text2.append(s_important_word)
+        #             labels.append(label)
+        #             seen.add(t_important_word)
+        #             seen.add(s_important_word)
 
-        seen = set()
-        for t_important_word in t_important_words:
-            if t_important_word in seen:
-                continue
-            for s_important_word in s_important_words:
-                if s_important_word in seen:
-                    continue
-                if s_important_word in word2siblings.get(t_important_word, []):
-                    text1.append(t_important_word)
-                    text2.append(s_important_word)
-                    labels.append(label)
-                    seen.add(t_important_word)
-                    seen.add(s_important_word)
-
-    for text in tqdm(texts, desc="Augmenting dataset samples"):
-        # Add identity
-        if "identity" in aug_methods:
-            text1.append(text)
-            text2.append(text)
-            labels.append(1)
-            n_pos += 1
-
-        if "important" in aug_methods:
-            text_phrase, text_important_words = text2phrase[text]
-
-            text1.append(text)
-            text2.append(text_phrase)
-            labels.append(1.0)
-
-            # text_important_words = np.random.choice(text_important_words, min(GENERATIONS_PER_SAMPLE, len(text_important_words)))
-            # for a_text in text_important_words:
-            #     text1.append(text)
-            #     text2.append(a_text)
-            #     labels.append(.75)
-            #     n_pos += 1
-
-        if "dirty" in aug_methods:
-            text_phrase, text_important_words = text2phrase[text]
-            text_common_words = [w for w in split(text) if w.lower() not in text_important_words]
-            text_common_words = np.random.choice(text_common_words, 3)
-            for common_word in text_common_words:
-                text1.append(text)
-                text2.append(common_word)
-                labels.append(0.1)
-
-        # Sampler negatives for text
-        negative_texts = get_negatives(text, texts, int(len(text) * .25))
-        for other in negative_texts:
-            text1.append(text)
-            text2.append(other)
-            labels.append(0)
+    # for text in tqdm(texts, desc="Augmenting dataset samples"):
+    #     # Add identity
+    #     if "identity" in aug_methods:
+    #         text1.append(text)
+    #         text2.append(text)
+    #         labels.append(1)
+    #         n_pos += 1
+    #
+    #     if "important" in aug_methods:
+    #         text_phrase, text_important_words = text2phrase[text]
+    #
+    #         text1.append(text)
+    #         text2.append(text_phrase)
+    #         labels.append(1.0)
+    #
+    #         # text_important_words = np.random.choice(text_important_words, min(GENERATIONS_PER_SAMPLE, len(text_important_words)))
+    #         # for a_text in text_important_words:
+    #         #     text1.append(text)
+    #         #     text2.append(a_text)
+    #         #     labels.append(.75)
+    #         #     n_pos += 1
+    #
+    #     if "dirty" in aug_methods:
+    #         text_phrase, text_important_words = text2phrase[text]
+    #         text_common_words = [w for w in split(text) if w.lower() not in text_important_words]
+    #         text_common_words = np.random.choice(text_common_words, 3)
+    #         for common_word in text_common_words:
+    #             text1.append(text)
+    #             text2.append(common_word)
+    #             labels.append(0.1)
+    #
+    #     # Sampler negatives for text
+    #     negative_texts = get_negatives(text, texts, int(len(text) * .25))
+    #     for other in negative_texts:
+    #         text1.append(text)
+    #         text2.append(other)
+    #         labels.append(0)
 
     print("Training Data:\n", pd.Series(labels).value_counts())
 

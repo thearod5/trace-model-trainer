@@ -7,7 +7,8 @@ from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
 from trace_model_trainer.formatters.classification_formatter import ClassificationFormatter
-from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
+from trace_model_trainer.loss.CustomCosineLoss import CustomCosineEvaluator
+from trace_model_trainer.models.st.balanced_trainer import AugmentedTrainer
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
 from trace_model_trainer.utils import clear_memory
@@ -29,10 +30,10 @@ def main():
 
         trainer = st_model.train(
             train_dataset={"train_data": ClassificationFormatter().format(train_dataset)},
-            eval_dataset={"eval_data": ClassificationFormatter().format(val_dataset)},
-            losses={"train_data": loss, "eval_data": loss},
+            losses={"train_data": loss},
             output_path=context.get_relative_path("model"),
-            trainer_class=BalancedTrainer,
+            trainer_class=AugmentedTrainer,
+            evaluator=CustomCosineEvaluator(val_dataset),
             batch_size=4,
             learning_rate=5e-6,
             args={
@@ -42,8 +43,8 @@ def main():
                 "eval_strategy": "epoch",
                 "eval_steps": 1,
                 "load_best_model_at_end": True,
-                "metric_for_best_model": "eval_eval_data_loss",
-                "logging_dir": context.get_relative_path("output"),
+                "metric_for_best_model": "eval_map",
+                "greater_is_better": True,
             }
         )
         _, after_metrics = eval_model(st_model, test_dataset)
