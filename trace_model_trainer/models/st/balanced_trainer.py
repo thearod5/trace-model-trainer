@@ -6,24 +6,7 @@ from trace_model_trainer.models.st.balanced_sampler import BalancedSampler
 from trace_model_trainer.transforms.augmentation import create_augmented_dataset
 
 
-class DataAugmentationCallback(TrainerCallback):
-    def __init__(self, trainer):
-        self.trainer = trainer
-
-    def on_epoch_begin(self, args, state, control, **kwargs):
-        # Regenerate the augmented dataset at the beginning of each epoch
-        original_dataset = self.trainer.original_dataset
-        self.trainer.train_dataset = {k: create_augmented_dataset(original_dataset[k])
-                                      for k in original_dataset.keys()}
-
-
 class BalancedTrainer(SentenceTransformerTrainer):
-    def __init__(self, *args, **kwargs):
-        self.original_dataset = kwargs["train_dataset"]
-        kwargs["train_dataset"] = {k: create_augmented_dataset(self.original_dataset[k]) for k in
-                                   self.original_dataset.keys()}  # needed to ensure columns are recognized later on
-        super().__init__(*args, **kwargs)
-        self.add_callback(DataAugmentationCallback(self))
 
     def get_train_dataloader(self) -> DataLoader:
         data_loader = super().get_train_dataloader()
@@ -42,3 +25,23 @@ class BalancedTrainer(SentenceTransformerTrainer):
             pin_memory_device=data_loader.pin_memory_device
             # batch_size, shuffle, sampler, drop_last defined in sampler
         )
+
+
+class DataAugmentationCallback(TrainerCallback):
+    def __init__(self, trainer):
+        self.trainer = trainer
+
+    def on_epoch_begin(self, args, state, control, **kwargs):
+        # Regenerate the augmented dataset at the beginning of each epoch
+        original_dataset = self.trainer.original_dataset
+        self.trainer.train_dataset = {k: create_augmented_dataset(original_dataset[k])
+                                      for k in original_dataset.keys()}
+
+
+class AugmentedTrainer(BalancedTrainer):
+    def __init__(self, *args, **kwargs):
+        self.original_dataset = kwargs["train_dataset"]
+        kwargs["train_dataset"] = {k: create_augmented_dataset(self.original_dataset[k]) for k in
+                                   self.original_dataset.keys()}  # needed to ensure columns are recognized later on
+        super().__init__(*args, **kwargs)
+        self.add_callback(DataAugmentationCallback(self))

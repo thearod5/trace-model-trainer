@@ -1,6 +1,6 @@
 import os.path
 
-from sentence_transformers.losses import ContrastiveLoss
+from sentence_transformers.losses import AnglELoss
 
 from trace_model_trainer.eval.kfold import kfold
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
@@ -20,20 +20,20 @@ def main():
     test_output_path = os.path.expanduser("~/projects/trace-model-trainer/output/st_test_output")
     context = EvaluationContext(test_output_path)
 
-    for train_dataset, test_dataset, seed in kfold(dataset, [.8, 0.1, 0.1], splitter, 1, [42]):
+    for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [.8, 0.1, 0.1], splitter, [42]):
         context.set_base_path(f"seed={seed}")
         st_model = STModel("all-MiniLM-L6-v2")
         _, before_metrics = eval_model(st_model, test_dataset)
 
-        loss = ContrastiveLoss(st_model.get_model())
+        loss = AnglELoss(st_model.get_model())
 
         trainer = st_model.train(
             train_dataset={"train_data": ClassificationFormatter().format(train_dataset)},
-            eval_dataset={"eval_data": ClassificationFormatter().format(test_dataset)},
+            eval_dataset={"eval_data": ClassificationFormatter().format(val_dataset)},
             losses={"train_data": loss, "eval_data": loss},
             output_path=context.get_relative_path("model"),
             trainer_class=BalancedTrainer,
-            batch_size=8,
+            batch_size=4,
             learning_rate=5e-6,
             args={
                 "num_train_epochs": 2,

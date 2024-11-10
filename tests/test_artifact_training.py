@@ -8,7 +8,7 @@ from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
 from trace_model_trainer.formatters.artifact_augmentation_formatter import ArtifactAugmentationFormatter
 from trace_model_trainer.loss.CustomCosineLoss import CustomCosineEvaluator
-from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
+from trace_model_trainer.models.st.balanced_trainer import AugmentedTrainer
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
 
@@ -64,7 +64,7 @@ def main():
         output_path=os.path.join(context.get_base_path(), "model"),
         batch_size=BATCH_SIZE,
         learning_rate=LEARNING_RATE,
-        trainer_class=BalancedTrainer,
+        trainer_class=AugmentedTrainer,
         evaluator=CustomCosineEvaluator(val_dataset),
         args={
             "num_train_epochs": EPOCHS,
