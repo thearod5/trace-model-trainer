@@ -14,14 +14,15 @@ from trace_model_trainer.tdata.trace_dataset import TraceDataset
 
 
 class STModel(ITraceModel):
-    def __init__(self, model_name: str = DEFAULT_ST_MODEL):
+    def __init__(self, model_name: str = DEFAULT_ST_MODEL, prefix: str = None):
         """
         Creates sentence transformer model with given model and formatter.
         :param model_name:
-        :param formatter:
+        :param prefix: Prefix to append to each sentence.
         """
         self.model_name = model_name
         self._model = None
+        self.prefix = prefix
 
     def train(self,
               train_dataset: Dataset | DatasetDict | Dict[str, Dataset],
@@ -94,7 +95,7 @@ class STModel(ITraceModel):
         :return: List of trace predictions containing embedding similarity scores.
         """
         texts = list(set(sources).union(set(targets)))
-        embeddings = self.get_model().encode(texts)
+        embeddings = self.get_model().encode(texts, prompt=self.prefix)
         embedding_map = {t: e for t, e in zip(texts, embeddings)}
         source_embeddings = [embedding_map[s] for s in sources]
         target_embeddings = [embedding_map[t] for t in targets]

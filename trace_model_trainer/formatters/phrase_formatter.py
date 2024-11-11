@@ -16,9 +16,10 @@ class PhraseFormatter(IFormatter):
         for text in tqdm(texts, desc="Augmenting dataset samples"):
             t_important_phrase, t_important_words = text2phrase[text]
 
-            text1.append(text)
-            text2.append(t_important_phrase)
-            labels.append(1)
+            for word, word_score in t_important_words.items():
+                text1.append(text)
+                text2.append(word)
+                labels.append(word_score)
 
             common_words = [w for w in split(text) if w.lower() not in t_important_words]
 

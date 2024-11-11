@@ -163,8 +163,8 @@ def get_tfidf_important_phrase(texts: List[str]):
         # TODO: Instead of fixed numbers, find outliers and include those
         text = texts[row_index]
         text_id = text.lower()
-        important_words = [corpus_vocabulary[idx] for idx, _ in sorted_word_scores[:5]]
-        word_indices = [text_id.index(word) for word in important_words[:3]]
+        important_words = {corpus_vocabulary[idx]: idx_score for idx, idx_score in sorted_word_scores}
+        word_indices = [text_id.index(corpus_vocabulary[idx]) for idx, idx_score in sorted_word_scores[:3]]
 
         start_idx = min(word_indices)
         end_idx = max(word_indices)

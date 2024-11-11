@@ -28,7 +28,7 @@ DATASETS = DATASETS[:1]
 MODEL_NAME = "all-MiniLM-L6-v2"
 EPOCHS = 2
 BATCH_SIZE = 4
-LEARNING_RATE = 5e-5
+LEARNING_RATE = 5e-6
 
 splitter = SplitterFactory.QUERY.create(group_col="target")
 
@@ -41,7 +41,7 @@ def main():
     # Create Datasets
     # os.path.expanduser("~/projects/trace-model-trainer/res/test")
     # 364882
-    dataset = load_traceability_dataset("thearod5/CCHIT")
+    dataset = load_traceability_dataset(os.path.expanduser("~/projects/trace-model-trainer/res/test"))
     splitter = QuerySplitter()
     train_dataset, test_dataset = splitter.split(dataset, train_size=2 / 3)
     train_dataset, val_dataset = splitter.split(train_dataset, train_size=1 / 2)
@@ -54,7 +54,6 @@ def main():
     print("Before Metrics:", before_metrics["dataset"])
 
     # Create Loss
-    # loss = ContrastiveTensionLoss(st_model.get_model())
     loss = AnglELoss(st_model.get_model())
 
     # Create Trainer

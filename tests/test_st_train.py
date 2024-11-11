@@ -23,7 +23,8 @@ def main():
 
     for train_dataset, val_dataset, test_dataset, seed in kfold(dataset, [.8, 0.1, 0.1], splitter, [42]):
         context.set_base_path(f"seed={seed}")
-        st_model = STModel("all-MiniLM-L6-v2")
+        prefix = "What is the intent of this artifact?\n\n"
+        st_model = STModel("all-MiniLM-L6-v2", prefix=prefix)
         _, before_metrics = eval_model(st_model, test_dataset)
 
         loss = AnglELoss(st_model.get_model())
