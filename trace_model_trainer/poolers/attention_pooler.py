@@ -62,14 +62,27 @@ class AttentionPooler(nn.Module):
         }
 
     def save(self, output_path: str):
-        # Save the pooling layer configuration
-        torch.save(self.state_dict(), f"{output_path}/custom_attention_pooling.pth")
+        # Save the state of the transformer encoder, multi-head attention, and MLP
+        torch.save({
+            'transformer_encoder': self.transformer_encoder.state_dict(),
+            'multihead_attention': self.multihead_attention.state_dict(),
+            'mlp': self.mlp.state_dict()
+        }, f"{output_path}/custom_attention_pooling.pth")
 
     @classmethod
     def load(cls, input_path: str):
-        # Load the pooling layer configuration
+        # Set your model parameters
         hidden_size = 384  # Set this to your model's hidden size
         num_attention_heads = 8  # Set this to your model's number of attention heads
-        pooling_layer = cls(hidden_size, num_attention_heads)
-        pooling_layer.load_state_dict(torch.load(f"{input_path}/custom_attention_pooling.pth"))
+        num_transformer_layers = 1  # Set this to the number of transformer layers
+
+        # Initialize the pooling layer
+        pooling_layer = cls(hidden_size, num_attention_heads, num_transformer_layers)
+
+        # Load the saved state
+        state_dict = torch.load(f"{input_path}/custom_attention_pooling.pth")
+        pooling_layer.transformer_encoder.load_state_dict(state_dict['transformer_encoder'])
+        pooling_layer.multihead_attention.load_state_dict(state_dict['multihead_attention'])
+        pooling_layer.mlp.load_state_dict(state_dict['mlp'])
+
         return pooling_layer
