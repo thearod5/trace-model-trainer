@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, List
 from unittest import TestCase
 
 import matplotlib.pyplot as plt
@@ -9,6 +9,7 @@ from sentence_transformers.models import Pooling
 from sklearn.metrics.pairwise import cosine_similarity
 from torch import Tensor
 
+from trace_model_trainer.loss.noun_loss import extract_token_contributions
 from trace_model_trainer.tdata.loader import load_traceability_dataset
 
 
@@ -83,7 +84,7 @@ class CustomPooling(Pooling):
 
 class TestTokenImportance(TestCase):
     def test_token_importance(self):
-        dataset = load_traceability_dataset(os.path.expanduser("~/projects/trace-model-trainer/res/test"))
+        dataset = load_traceability_dataset(os.path.expanduser("/res/test"))
         k = 3
         # Select artifact
         artifact_ids = list(dataset.artifact_map.keys())[:k]
@@ -123,38 +124,42 @@ class TestTokenImportance(TestCase):
             artifact_sentences.append(artifact_content)
             artifact_sentences.append(prefix + artifact_content)
 
-        features = model.tokenize(artifact_sentences)
-        with torch.no_grad():
-            output = model.forward(features)
 
-        # Access the token contributions
-        tokenizer = model.tokenizer
-        token_contributions = output.get("token_contributions", None)  # Tensor of shape (batch_size, max_sequence_length)
+def calculate_token_importance(model: SentenceTransformer, artifact_sentences: List[str], output_path: str):
+    features = model.tokenize(artifact_sentences)
+    features = {k: v.to("mps") for k, v in features.items()}
 
-        # Assuming token_contributions is a tensor of shape (5, 17) for 5 sentences and 17 tokens each
-        # Convert the tensor to a numpy array
-        contribution_scores = token_contributions.cpu().numpy()
+    with torch.no_grad():
+        output = model.forward(features)
 
-        # Create a vertical stack of plots
-        fig, axes = plt.subplots(len(artifact_sentences), 1,
-                                 figsize=(10, len(artifact_sentences) * 4))  # Adjust height based on the number of sentences
+    # Access the token contributions
+    tokenizer = model.tokenizer
 
-        # Plot each sentence's token contributions
-        for i, (sentence, ax) in enumerate(zip(artifact_sentences, axes)):
-            # Tokenize the sentence to get individual tokens
-            tokens = tokenizer.tokenize(sentence)
+    # Assuming token_contributions is a tensor of shape (5, 17) for 5 sentences and 17 tokens each
+    # Convert the tensor to a numpy array
+    contribution_scores = extract_token_contributions(output).to("cpu")
 
-            # Get the contribution scores for the current sentence
-            scores = contribution_scores[i][:len(tokens)]  # Take only the valid tokens
+    # Create a vertical stack of plots
+    fig, axes = plt.subplots(len(artifact_sentences), 1,
+                             figsize=(10, len(artifact_sentences) * 4))  # Adjust height based on the number of sentences
 
-            # Plot the tokens with their contribution scores
-            ax.bar(range(len(tokens)), scores, color="blue", alpha=0.6)
-            ax.set_xticks(range(len(tokens)))
-            ax.set_xticklabels(tokens, rotation=45, ha="right")
-            ax.set_title(f"Sentence: {sentence}")
-            ax.set_xlabel("Tokens")
-            ax.set_ylabel("Contribution Score")
-            ax.set_ylim(0, max(scores) + 0.05)  # Assuming scores are normalized between 0 and 1
+    # Plot each sentence's token contributions
+    for i, (sentence, ax) in enumerate(zip(artifact_sentences, axes)):
+        # Tokenize the sentence to get individual tokens
+        tokens = tokenizer.tokenize(sentence)
+        n_tokens = min(len(tokens), tokenizer.model_max_length)
 
-        plt.tight_layout()  # Adjust layout to avoid overlap
-        plt.show()
+        # Get the contribution scores for the current sentence
+        scores = contribution_scores[i][:n_tokens]  # Take only the valid tokens
+
+        # Plot the tokens with their contribution scores
+        ax.bar(range(n_tokens), scores, color="blue", alpha=0.6)
+        ax.set_xticks(range(len(tokens)))
+        ax.set_xticklabels(tokens, rotation=45, ha="right")
+        ax.set_title(f"Sentence: {sentence}")
+        ax.set_xlabel("Tokens")
+        ax.set_ylabel("Contribution Score")
+        ax.set_ylim(0, max(scores) + 0.05)  # Assuming scores are normalized between 0 and 1
+
+    plt.tight_layout()  # Adjust layout to avoid overlap
+    plt.savefig(output_path)

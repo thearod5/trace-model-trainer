@@ -7,7 +7,7 @@ from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
 from trace_model_trainer.formatters.classification_formatter import ClassificationFormatter
-from trace_model_trainer.loss.CustomCosineLoss import CustomCosineEvaluator
+from trace_model_trainer.loss.custom_cosine_loss import CustomCosineEvaluator
 from trace_model_trainer.models.st.balanced_trainer import AugmentedTrainer
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset

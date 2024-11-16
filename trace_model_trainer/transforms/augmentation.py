@@ -3,6 +3,7 @@ from collections import defaultdict
 from itertools import combinations
 from typing import Dict, List
 
+import nltk
 import numpy as np
 import pandas as pd
 from datasets import Dataset, DatasetDict
@@ -12,8 +13,14 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from trace_model_trainer.utils import clear_memory
 
+# Ensure the necessary NLTK resources are downloaded
+nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('punkt_tab')
+nltk.download('punkt')
+
 STOP_WORDS = ["of", "a", "and", "so", "on", "to", "at", "by", "for", "in", "with", "is", "them", "has", "like", "allow", "be", "able",
-              "when", "that", "the", "been", "through"]
+              "when", "that", "the", "been", "through", "between", "their"]
 GENERATIONS_PER_SAMPLE = 3
 DIRTY_PER_SAMPLE = 1
 np.random.seed(1600)
@@ -163,7 +170,9 @@ def get_tfidf_important_phrase(texts: List[str]):
         # TODO: Instead of fixed numbers, find outliers and include those
         text = texts[row_index]
         text_id = text.lower()
-        important_words = {corpus_vocabulary[idx]: idx_score for idx, idx_score in sorted_word_scores}
+        scores = [s for _, s in sorted_word_scores]
+        threshold = np.mean(scores) - np.std(scores)
+        important_words = [corpus_vocabulary[word] for word, score in sorted_word_scores if score >= threshold]
         word_indices = [text_id.index(corpus_vocabulary[idx]) for idx, idx_score in sorted_word_scores[:3]]
 
         start_idx = min(word_indices)
@@ -299,14 +308,14 @@ def generate_ngrams(tokens, n):
     return zip(*[tokens[i:] for i in range(n)])
 
 
-def calculate_siblings(texts: List[str]):
+def calculate_siblings(texts: List[str], sigma: int = 1):
     model = SentenceTransformer("all-MiniLM-L6-v2")
     embeddings = model.encode(texts)
     clear_memory(model)
     similarity_matrix = cosine_similarity(embeddings, embeddings)
 
     text2siblings = {}
-    threshold = similarity_matrix.std() + similarity_matrix.mean()
+    threshold = similarity_matrix.mean() + (sigma * similarity_matrix.std())
     for i, text in enumerate(texts):
         siblings = [sibling for score, sibling in zip(similarity_matrix[i], texts) if score > threshold and sibling != text]
         text2siblings[text] = siblings

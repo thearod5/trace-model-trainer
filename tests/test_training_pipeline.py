@@ -7,7 +7,7 @@ from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.evaluation_context import EvaluationContext
 from trace_model_trainer.formatters.artifact_augmentation_formatter import ArtifactAugmentationFormatter
 from trace_model_trainer.formatters.contrastive_tension_formatter import ContrastiveTensionFormatter
-from trace_model_trainer.loss.CustomCosineLoss import CustomCosineEvaluator
+from trace_model_trainer.loss.custom_cosine_loss import CustomCosineEvaluator
 from trace_model_trainer.models.st.balanced_trainer import AugmentedTrainer, BalancedTrainer
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.tdata.loader import load_traceability_dataset
