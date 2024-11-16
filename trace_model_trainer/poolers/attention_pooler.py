@@ -6,8 +6,18 @@ from torch import Tensor
 
 
 class AttentionPooler(nn.Module):
-    def __init__(self, hidden_size, num_attention_heads=8):
+    def __init__(self, hidden_size, num_attention_heads=8, num_transformer_layers=1):
         super(AttentionPooler, self).__init__()
+
+        # Define a Transformer Encoder layer
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hidden_size,
+            nhead=num_attention_heads
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=num_transformer_layers
+        )
 
         # Define the Multihead Attention layer
         self.multihead_attention = nn.MultiheadAttention(embed_dim=hidden_size, num_heads=num_attention_heads)
@@ -27,17 +37,16 @@ class AttentionPooler(nn.Module):
         # MultiheadAttention expects (seq_length, batch_size, hidden_size)
         token_embeddings = token_embeddings.transpose(0, 1)
 
-        # Create an attention mask in the format expected by MultiheadAttention
-        # It should be of shape (batch_size, seq_length) and contain True for positions to be masked
-        # Convert attention_mask from (batch_size, seq_length) to (seq_length, batch_size)
-        attention_mask = attention_mask == 0  # Convert to a boolean mask where True indicates padding
-        # attention_mask = attention_mask.transpose(0, 1)
+        # Apply the transformer encoder
+        transformer_output = self.transformer_encoder(token_embeddings, src_key_padding_mask=attention_mask == 0)
 
-        # Apply the Multihead Attention
-        attn_output, _ = self.multihead_attention(token_embeddings,
-                                                  token_embeddings,
-                                                  token_embeddings,
-                                                  key_padding_mask=attention_mask)
+        # Apply the Multihead Attention using the transformer output as Q, K, and V
+        attn_output, _ = self.multihead_attention(
+            query=transformer_output,
+            key=transformer_output,
+            value=transformer_output,
+            key_padding_mask=attention_mask == 0
+        )
 
         # Transpose the output back to (batch_size, seq_length, hidden_size)
         attn_output = attn_output.transpose(0, 1)
