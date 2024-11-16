@@ -1,5 +1,6 @@
 from typing import Dict
 
+import torch
 import torch.nn as nn
 from torch import Tensor
 
@@ -50,3 +51,16 @@ class AttentionPooler(nn.Module):
         return {
             "sentence_embedding": sentence_embeddings
         }
+
+    def save(self, output_path: str):
+        # Save the pooling layer configuration
+        torch.save(self.state_dict(), f"{output_path}/custom_attention_pooling.pth")
+
+    @classmethod
+    def load(cls, input_path: str):
+        # Load the pooling layer configuration
+        hidden_size = 384  # Set this to your model's hidden size
+        num_attention_heads = 8  # Set this to your model's number of attention heads
+        pooling_layer = cls(hidden_size, num_attention_heads)
+        pooling_layer.load_state_dict(torch.load(f"{input_path}/custom_attention_pooling.pth"))
+        return pooling_layer

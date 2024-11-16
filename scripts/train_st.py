@@ -16,13 +16,14 @@ from trace_model_trainer.utils import clear_memory
 
 def main():
     np.random.seed(42)
-    # os.path.expanduser("~/projects/trace-model-trainer/res/test")
-    dataset = load_traceability_dataset("thearod5/cchit")
+    p0, split0, split1 = (os.path.expanduser("~/projects/trace-model-trainer/res/test"), 0.6, 0.5)
+    # p1, split0, split1 = ("thearod5/cchit", 0.2, 0.5)
+    dataset = load_traceability_dataset(p0)
     splitter = SplitterFactory.QUERY.create(group_col="target")
     test_output_path = os.path.expanduser("~/projects/trace-model-trainer/output/attention_pooler")
 
-    train_dataset, test_dataset = splitter.split(dataset, train_size=0.2)
-    train_dataset, val_dataset = splitter.split(train_dataset, train_size=0.5)
+    train_dataset, test_dataset = splitter.split(dataset, train_size=split0)
+    train_dataset, val_dataset = splitter.split(train_dataset, train_size=split1)
 
     st_model = STModel("all-MiniLM-L6-v2")
 
