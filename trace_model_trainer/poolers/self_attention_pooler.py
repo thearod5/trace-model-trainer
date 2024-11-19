@@ -1,8 +1,7 @@
 from typing import Dict
 
 import torch
-from softmax_one import softmax_one
-from torch import Tensor, nn
+from torch import Tensor, nn, softmax
 
 
 class SelfAttentionPooler(nn.Module):
@@ -32,7 +31,7 @@ class SelfAttentionPooler(nn.Module):
         attention_scores = attention_scores.masked_fill(attention_mask.unsqueeze(1) == 0, float('-inf'))
 
         # Normalize the attention scores using softmax
-        attention_weights = softmax_one(attention_scores, dim=-1)
+        attention_weights = softmax(attention_scores, dim=-1)
 
         # Compute the weighted sum of values
         weighted_sum = torch.bmm(attention_weights, values).sum(dim=1)  # Average across the sequence dimension
