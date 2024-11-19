@@ -34,7 +34,27 @@ class SelfAttentionPooler(nn.Module):
         attention_weights = softmax(attention_scores, dim=-1)
 
         # Compute the weighted sum of values
-        weighted_sum = torch.bmm(attention_weights, values).mean(dim=1)  # Average across the sequence dimension
+        weighted_sum = torch.bmm(attention_weights, values).sum(dim=1)  # Average across the sequence dimension
+
+        return {"sentence_embedding": weighted_sum}
+
+    def forward2(self, features: Dict[str, Tensor]):
+        token_embeddings = features["token_embeddings"]
+        attention_mask = features["attention_mask"]
+
+        x = token_embeddings
+
+        # x: (batch_size, sequence_length, embedding_dim)
+        queries = self.query(x)
+        keys = self.key(x)
+        values = self.value(x)
+
+        # Compute attention scores using dot product
+        attention_scores = torch.bmm(queries, keys.transpose(1, 2)) / (self.embedding_dim ** 0.5)
+        attention_weights = softmax(attention_scores, dim=-1)  # Normalize scores
+
+        # Compute weighted sum of values
+        weighted_sum = torch.bmm(attention_weights, values).sum(dim=1)
 
         return {"sentence_embedding": weighted_sum}
 
