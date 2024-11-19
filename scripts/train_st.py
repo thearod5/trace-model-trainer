@@ -1,17 +1,17 @@
 import os.path
 
 import numpy as np
-from sentence_transformers.losses import AnglELoss, CoSENTLoss
+from sentence_transformers.losses import AnglELoss, ContrastiveTensionLoss
 
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.formatters.classification_formatter import ClassificationFormatter
+from trace_model_trainer.formatters.contrastive_tension_formatter import ContrastiveTensionFormatter
 from trace_model_trainer.loss.custom_cosine_loss import CustomCosineEvaluator
 from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.poolers.attention_pooler import AttentionPooler
 from trace_model_trainer.tdata.loader import load_traceability_dataset
-from trace_model_trainer.transforms.vsm_dataset import create_vsm_dataset
 from trace_model_trainer.utils import clear_memory
 
 
@@ -26,7 +26,7 @@ def main():
     train_dataset, test_dataset = splitter.split(dataset, train_size=split0)
     train_dataset, val_dataset = splitter.split(train_dataset, train_size=split1)
 
-    vsm_dataset = create_vsm_dataset(dataset)
+    artifact_dataset = ContrastiveTensionFormatter().format(dataset)
 
     st_model = STModel("all-MiniLM-L6-v2")
 
@@ -37,17 +37,17 @@ def main():
     print(before_metrics)
 
     # Train
-    vsm_loss = CoSENTLoss(st_model.get_model())
-    loss = AnglELoss(st_model.get_model())
+    artifact_loss = ContrastiveTensionLoss(st_model.get_model())
+    trace_loss = AnglELoss(st_model.get_model())
 
     st_model.train(
         train_dataset={
             "train_data": ClassificationFormatter().format(train_dataset),
-            "vsm": vsm_dataset
+            "artifact": artifact_dataset
         },
         losses={
-            "train_data": loss,
-            "vsm": vsm_loss
+            "train_data": trace_loss,
+            "artifact": artifact_loss
         },
         output_path=os.path.join(test_output_path, "model"),
         trainer_class=BalancedTrainer,
