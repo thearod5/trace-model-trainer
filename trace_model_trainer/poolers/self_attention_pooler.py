@@ -12,7 +12,7 @@ class SelfAttentionPooler(nn.Module):
         self.key = nn.Linear(embedding_dim, embedding_dim)
         self.value = nn.Linear(embedding_dim, embedding_dim)
 
-    def forward(self, features: Dict[str, Tensor]):
+    def forward2(self, features: Dict[str, Tensor]):
         token_embeddings = features["token_embeddings"]
         attention_mask = features["attention_mask"]
 
@@ -38,7 +38,7 @@ class SelfAttentionPooler(nn.Module):
 
         return {"sentence_embedding": weighted_sum}
 
-    def forward2(self, features: Dict[str, Tensor]):
+    def forward(self, features: Dict[str, Tensor]):
         token_embeddings = features["token_embeddings"]
         attention_mask = features["attention_mask"]
 
