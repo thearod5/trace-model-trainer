@@ -23,12 +23,18 @@ class SelfAttentionPooler(nn.Module):
         keys = self.key(x)
         values = self.value(x)
 
-        # Compute attention scores using dot product
+        # Compute attention scores and apply scaling
         attention_scores = torch.bmm(queries, keys.transpose(1, 2)) / (self.embedding_dim ** 0.5)
-        attention_weights = softmax(attention_scores, dim=-1)  # Normalize scores
 
-        # Compute weighted sum of values
-        weighted_sum = torch.bmm(attention_weights, values).sum(dim=1)
+        # Apply the attention mask to ignore padding tokens
+        # Masked positions are set to a large negative value to ensure they have no influence
+        attention_scores = attention_scores.masked_fill(attention_mask.unsqueeze(1) == 0, float('-inf'))
+
+        # Normalize the attention scores using softmax
+        attention_weights = softmax(attention_scores, dim=-1)
+
+        # Compute the weighted sum of values
+        weighted_sum = torch.bmm(attention_weights, values).mean(dim=1)  # Average across the sequence dimension
 
         return {"sentence_embedding": weighted_sum}
 
