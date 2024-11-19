@@ -1,5 +1,6 @@
 from typing import Dict
 
+import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
@@ -29,8 +30,20 @@ class WeightedMeanPooler(nn.Module):
         weighted_embeddings = token_embeddings * normalized_weights.unsqueeze(-1)  # (batch_size, sequence_length, embedding_dim)
         sentence_embedding = weighted_embeddings.sum(dim=1)  # (batch_size, embedding_dim)
 
-        a = 1
         return {
             "sentence_embedding": sentence_embedding,
             "token_weights": normalized_weights
         }
+
+    def save(self, output_path: str):
+        torch.save({
+            "embedding_dim": self.embedding_dim,
+            "weight_layer": self.weight_layer.state_dict()
+        }, f"{output_path}/weight_layer.pt")
+
+    @classmethod
+    def load(cls, input_path: str):
+        state_dict = torch.load(f"{input_path}/weight_layer.pth")
+        pooling_layer = cls(state_dict["embedding_dim"])
+        pooling_layer.weight_layer.load_state_dict(state_dict['weight_layer'])
+        return pooling_layer
