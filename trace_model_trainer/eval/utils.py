@@ -3,7 +3,6 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from pandas import DataFrame
-from scipy import stats
 from sklearn.metrics import average_precision_score, ndcg_score
 
 from trace_model_trainer.eval.trace_iterator import trace_iterator
@@ -87,7 +86,7 @@ def calculate_map(query2preds):
     if len(ap_scores) == 0:
         print("No queries contained positive lnks.")
         return 0
-    return calculate_confidence_bounds(ap_scores)
+    return calculate_summary(ap_scores)
 
 
 def calculate_mrr(query2preds: Dict[str, List[TracePrediction]]):
@@ -102,7 +101,7 @@ def calculate_mrr(query2preds: Dict[str, List[TracePrediction]]):
         reciprocal_ranks.extend(query_ranks)
     if not reciprocal_ranks:
         return 0
-    return calculate_confidence_bounds(reciprocal_ranks)
+    return calculate_summary(reciprocal_ranks)
 
 
 def calculate_ndcg(query2preds: Dict[str, List[TracePrediction]]):
@@ -117,7 +116,7 @@ def calculate_ndcg(query2preds: Dict[str, List[TracePrediction]]):
         ndcg_scores.append(ndcg)
     if not ndcg_scores:
         return 0, 0, 0
-    return calculate_confidence_bounds(ndcg_scores)
+    return calculate_summary(ndcg_scores)
 
 
 def aggregate_metrics(metrics: List[Dict], exclude_group: str = "seed") -> DataFrame:
@@ -159,19 +158,9 @@ def create_retrieval_queries(trace_dataset: TraceDataset):
     return queries
 
 
-def calculate_confidence_bounds(data: List[float]):
+def calculate_summary(data: List[float]):
     # Calculate the mean and standard deviation
     mean_accuracy = np.mean(data)
-    std_deviation = np.std(data, ddof=1)  # Using sample standard deviation
-
-    # Calculate the 95% confidence interval
-    confidence_level = 0.95
-    z_value = stats.norm.ppf(1 - (1 - confidence_level) / 2)  # z-value for 95% confidence
-    margin_of_error = z_value * std_deviation
-
-    lower_bound = mean_accuracy - margin_of_error
-    upper_bound = mean_accuracy + margin_of_error
-
-    # Ensure the upper bound does not exceed 1.0 (since accuracy cannot be more than 100%)
-    upper_bound = min(upper_bound, 1.0)
+    lower_bound = min(data)
+    upper_bound = max(data)
     return mean_accuracy, lower_bound, upper_bound
