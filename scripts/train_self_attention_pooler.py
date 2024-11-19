@@ -2,6 +2,7 @@ import os.path
 
 import numpy as np
 from sentence_transformers.losses import AnglELoss
+from sentence_transformers.training_args import MultiDatasetBatchSamplers
 
 from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
@@ -15,6 +16,7 @@ from trace_model_trainer.utils import clear_memory
 
 
 def main():
+    MultiDatasetBatchSamplers.ROUND_ROBIN
     np.random.seed(42)
     p0, split0, split1 = (os.path.expanduser("~/projects/trace-model-trainer/res/test"), 0.6, 0.5)
     # p1, split0, split1 = ("thearod5/cchit", 0.2, 0.5)
