@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from datasets import Dataset
 from torch.utils.data import ConcatDataset, Sampler
 
@@ -45,8 +44,8 @@ class BalancedSampler(Sampler):
             # Select negative links to use in batches
             n_negative = int(self.neg_sample_ratio * len(self.pos_indices))
             neg_indices = np.random.choice(self.neg_indices, min(n_negative, len(self.neg_indices)), replace=False).tolist()
-            labels = [self.dataset[i]["label"] for i in neg_indices + self.pos_indices]
-            print("Batched Training Data:\n", pd.Series(labels).value_counts())
+            # labels = [self.dataset[i]["label"] for i in neg_indices + self.pos_indices]
+            # print("Batched Training Data:\n", pd.Series(labels).value_counts())
 
         # Create batches
         indices = neg_indices + self.pos_indices
@@ -68,6 +67,7 @@ class BalancedSampler(Sampler):
             pos_indices = []
             neg_indices = []
             for i, item in enumerate(dataset):
-                (pos_indices if item["label"] >= 0.5 else neg_indices).append(i)
+                score = item["label"] if "label" in item else item["score"]
+                (pos_indices if score >= 0.5 else neg_indices).append(i)
 
         return pos_indices, neg_indices

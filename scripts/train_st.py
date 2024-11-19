@@ -7,6 +7,7 @@ from trace_model_trainer.eval.splitters.splitter_factory import SplitterFactory
 from trace_model_trainer.eval.utils import eval_model
 from trace_model_trainer.formatters.classification_formatter import ClassificationFormatter
 from trace_model_trainer.loss.custom_cosine_loss import CustomCosineEvaluator
+from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
 from trace_model_trainer.models.st_model import STModel
 from trace_model_trainer.poolers.attention_pooler import AttentionPooler
 from trace_model_trainer.tdata.loader import load_traceability_dataset
@@ -49,7 +50,7 @@ def main():
             "vsm": vsm_loss
         },
         output_path=os.path.join(test_output_path, "model"),
-        # trainer_class=BalancedTrainer,
+        trainer_class=BalancedTrainer,
         evaluator=CustomCosineEvaluator(val_dataset),
         batch_size=4,
         learning_rate=5e-6,

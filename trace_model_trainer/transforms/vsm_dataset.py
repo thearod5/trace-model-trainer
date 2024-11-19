@@ -27,7 +27,7 @@ def create_vsm_dataset(dataset: TraceDataset):
                 samples.append({
                     "sentence1": s_text,
                     "sentence2": t_text,
-                    "score": (vsm_score + st_score) / 2
+                    "label": (vsm_score + st_score) / 2
                 })
 
     dataset = Dataset.from_dict(pd.DataFrame(samples))
