@@ -4,9 +4,9 @@ import torch
 from torch import Tensor, nn, softmax
 
 
-class SelfAttentionPooler(nn.Module):
+class SelfAttentionBlock(nn.Module):
     def __init__(self, embedding_dim):
-        super(SelfAttentionPooler, self).__init__()
+        super(SelfAttentionBlock, self).__init__()
         self.embedding_dim = embedding_dim
         self.query = nn.Linear(embedding_dim, embedding_dim)
         self.key = nn.Linear(embedding_dim, embedding_dim)
@@ -56,4 +56,36 @@ class SelfAttentionPooler(nn.Module):
         pooling_layer.key.load_state_dict(state_dict['key'])
         pooling_layer.value.load_state_dict(state_dict['value'])
 
+        return pooling_layer
+
+
+class SelfAttentionPooler(nn.Module):
+    def __init__(self, embedding_dim, n_heads: int = 3):
+        super(SelfAttentionPooler, self).__init__()
+        self.embedding_dim = embedding_dim
+        self.heads = nn.ModuleList([SelfAttentionBlock(self.embedding_dim) for _ in range(n_heads)])
+
+    def forward(self, features: Dict[str, Tensor]):
+        # Ensure all heads are applied properly
+        outputs = [head(features)["sentence_embedding"] for head in self.heads]
+        embeddings = torch.stack(outputs, dim=0).sum(dim=0)  # Combine head outputs
+        return {"sentence_embedding": embeddings}
+
+    def save(self, output_path: str):
+        """Saves weights of matrix weights"""
+        state_dict = {"embedding_dim": self.embedding_dim, "n_heads": len(self.heads)}
+        for i, head in enumerate(self.heads):
+            state_dict[f"head_{i}"] = head.state_dict()
+        torch.save(state_dict, f"{output_path}/self_attention_pooler.pt")
+
+    @classmethod
+    def load(cls, input_path: str):
+        state_dict = torch.load(f"{input_path}/self_attention_pooler.pth")
+
+        embedding_dim = state_dict.pop("embedding_dim")
+        n_heads = state_dict.pop("n_heads")
+
+        pooling_layer = cls(embedding_dim=embedding_dim, n_heads=n_heads)
+        for i in range(n_heads):
+            pooling_layer.heads[i].load_state_dict(state_dict[f"head_{i}"])
         return pooling_layer

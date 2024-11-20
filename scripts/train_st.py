@@ -10,7 +10,7 @@ from trace_model_trainer.formatters.contrastive_tension_formatter import Contras
 from trace_model_trainer.loss.custom_cosine_loss import CustomCosineEvaluator
 from trace_model_trainer.models.st.balanced_trainer import BalancedTrainer
 from trace_model_trainer.models.st_model import STModel
-from trace_model_trainer.poolers.weighted_mean_pooler import WeightedMeanPooler
+from trace_model_trainer.poolers.self_attention_pooler import SelfAttentionPooler
 from trace_model_trainer.tdata.loader import load_traceability_dataset
 from trace_model_trainer.utils import clear_memory
 
@@ -31,7 +31,7 @@ def main():
     st_model = STModel("all-MiniLM-L6-v2")
 
     model = st_model.get_model()
-    model.pooling_layer = WeightedMeanPooler(model.get_sentence_embedding_dimension())
+    model.pooling_layer = SelfAttentionPooler(model.get_sentence_embedding_dimension())
 
     _, before_metrics = eval_model(st_model, test_dataset)
     print(before_metrics)
