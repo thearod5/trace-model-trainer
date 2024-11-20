@@ -12,51 +12,42 @@ class SelfAttentionBlock(nn.Module):
         self.key = nn.Linear(embedding_dim, embedding_dim)
         self.value = nn.Linear(embedding_dim, embedding_dim)
 
+        # Aggregation FFN now outputs a single vector per sequence
+        self.aggregation = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim * 4),
+            nn.ReLU(),
+            nn.Linear(embedding_dim * 4, embedding_dim),
+            nn.Tanh()  # Optional non-linearity for compact embedding
+        )
+
     def forward(self, features: Dict[str, Tensor]):
-        token_embeddings = features["token_embeddings"]
-        attention_mask = features["attention_mask"]
+        token_embeddings = features["token_embeddings"]  # (batch_size, seq_len, embedding_dim)
+        attention_mask = features["attention_mask"]  # (batch_size, seq_len)
 
-        x = token_embeddings
+        # Linear projections for query, key, value
+        queries = self.query(token_embeddings)  # (batch_size, seq_len, embedding_dim)
+        keys = self.key(token_embeddings)  # (batch_size, seq_len, embedding_dim)
+        values = self.value(token_embeddings)  # (batch_size, seq_len, embedding_dim)
 
-        # x: (batch_size, sequence_length, embedding_dim)
-        queries = self.query(x)
-        keys = self.key(x)
-        values = self.value(x)
+        # Compute scaled attention scores
+        attention_scores = torch.bmm(queries, keys.transpose(1, 2))  # (batch_size, seq_len, seq_len)
+        attention_scores /= (self.embedding_dim ** 0.5)  # Scaling
 
-        # Compute attention scores and apply scaling
-        attention_scores = torch.bmm(queries, keys.transpose(1, 2)) / (self.embedding_dim ** 0.5)
-
-        # Apply the attention mask to ignore padding tokens
-        # Masked positions are set to a large negative value to ensure they have no influence
+        # Apply mask: large negative values for padded tokens
         attention_scores = attention_scores.masked_fill(attention_mask.unsqueeze(1) == 0, float('-inf'))
 
-        # Normalize the attention scores using softmax
-        attention_weights = softmax(attention_scores, dim=-1)
+        # Normalize scores
+        attention_weights = softmax(attention_scores, dim=-1)  # (batch_size, seq_len, seq_len)
 
-        # Compute the weighted sum of values
-        weighted_sum = torch.bmm(attention_weights, values).sum(dim=1)  # Average across the sequence dimension
+        # Weighted sum of values
+        attention_matrix = torch.bmm(attention_weights, values)  # (batch_size, seq_len, embedding_dim)
 
-        return {"sentence_embedding": weighted_sum}
+        # Aggregate using the feedforward network
+        # Instead of mean pooling, aggregate via learned feedforward network
+        # Flatten sequence dimension and apply aggregation FFN
+        aggregated_embedding = self.aggregation(attention_matrix.mean(dim=1))  # (batch_size, embedding_dim)
 
-    def save(self, output_path: str):
-        """Saves weights of matrix weights"""
-        torch.save({
-            "embedding_dim": self.embedding_dim,
-            "query": self.query.state_dict(),
-            "key": self.key.state_dict(),
-            "value": self.value.state_dict()
-        }, f"{output_path}/self_attention_pooler.pt")
-
-    @classmethod
-    def load(cls, input_path: str):
-        state_dict = torch.load(f"{input_path}/self_attention_pooler.pth")
-
-        pooling_layer = cls(state_dict["embedding_dim"])
-        pooling_layer.query.load_state_dict(state_dict['query'])
-        pooling_layer.key.load_state_dict(state_dict['key'])
-        pooling_layer.value.load_state_dict(state_dict['value'])
-
-        return pooling_layer
+        return {"sentence_embedding": aggregated_embedding}
 
 
 class SelfAttentionPooler(nn.Module):
